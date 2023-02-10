@@ -1,0 +1,4 @@
+1) Prevent adding any additional fields
+2) delete photo when delete any employee, doctor, patient
+3) register route for patient before login
+4) allow services for all clinics

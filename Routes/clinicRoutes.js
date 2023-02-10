@@ -16,7 +16,5 @@ router.route("/clinic/:id?")
 	.patch(...ClinicValidation, validationError, controller.updateClinic)
 	.delete(authenticatioMW.checkAdmin, controller.deleteClinic)
 
-router.route("/clinic/services/:id?") // all users can see clinic services
-	.get(controller.getClinicServices)
 
 module.exports = router;

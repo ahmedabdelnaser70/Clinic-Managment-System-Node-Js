@@ -68,7 +68,7 @@ exports.getClinicById = function(request, response, next) {
 	})
 }
 
-exports.getClinicServices = function(request, response, next) {
+exports.getAllClinicServices = function(request, response, next) {
 	ClinicSchema.findOne(
 		{
 			_id: request.params.id
