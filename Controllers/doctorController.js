@@ -11,6 +11,7 @@ const clinicSchema = mongoose.model("clinics");
 const appointmentSchema = mongoose.model("appointments");
 const UserSchema = mongoose.model('users');
 const helper = require("../helper/helperFunctions")
+
 exports.getAllDoctors = (request, response, next) => {
    let reqQuery = { ...request.query };
    let querystr = JSON.stringify(reqQuery);
