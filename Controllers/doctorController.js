@@ -6,11 +6,11 @@ require("../Models/doctorModel");
 require("../Models/clinicModel");
 require("../Models/appointmentModel");
 require('../Models/usersModel');
+const helper = require("../helper/helperFunctions")
 const doctorSchema = mongoose.model("doctors");
 const clinicSchema = mongoose.model("clinics");
 const appointmentSchema = mongoose.model("appointments");
 const UserSchema = mongoose.model('users');
-const helper = require("../helper/helperFunctions")
 
 exports.getAllDoctors = (request, response, next) => {
    let reqQuery = { ...request.query };
