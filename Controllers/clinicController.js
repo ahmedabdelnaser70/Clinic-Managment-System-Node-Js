@@ -161,7 +161,7 @@ exports.addClinic = function(request, response, next) {
 	}
 }
 
-exports.updateClinic = function(request, response, next){
+exports.updateClinic = function(request, response, next) {
 	ClinicSchema.findOne({_id: request.params.id}, {doctors: 1, manager: 1, _id: 0}).then(function(data) {
 		if(data != null) {
 			if(request.id == data.manager || request.role == 'admin') {	
@@ -314,7 +314,7 @@ exports.updateClinic = function(request, response, next){
 	})
 }
 
-exports.deleteClinic = function(request, response, next){
+exports.deleteClinic = function(request, response, next) {
 	ClinicSchema.deleteOne({
 		_id: request.params.id,
 	}).then(function(result) {
