@@ -1,11 +1,6 @@
-//requires 
 const mongoose = require("mongoose");
 require("../Models/MedicineModel")
-
-/*variables from require*/
-//geeting schema from model
 const medicineSchema = mongoose.model("medicines")
-
 
 exports.getAllMedicines=(request,response,next)=>{
 	let reqQuery = { ...request.query }; //using spread operator make any change on reqQuery wont affect request.query
@@ -43,7 +38,7 @@ exports.addMedicine=(request,response,next)=>{
 
 
 }
-//----------CRUD BY PARAM---------------------//.
+
 exports.getMedicineByIdChild=(request,response,next)=>{
 	medicineSchema.find({_id:request.params.id})
 	.then((data)=>{
