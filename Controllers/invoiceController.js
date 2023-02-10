@@ -204,27 +204,3 @@ function createPdf(res) {
       console.log("Error occurred", error);
    }
 }
-
-// let data = {
-//    client: { company: "Client Corp", address: "Clientstreet 456", zip: "4567 CD", city: "Assiut", country: "Egypt" },
-//    sender: { company: "Sample Corp", address: "Sample Street 123", zip: "1234 AB", city: "Assiut", country: "Egypt" },
-//    images: { logo: "https://public.easyinvoice.cloud/img/logo_en_original.png" },
-//    information: {
-//       number: res._id,
-//       "due-date": res._id,
-//       date: res.date,
-//    },
-//    products: [
-//       { quantity: res.quantity, description: res.medicine, "tax-rate": 0, price: res.total },
-//      //  { quantity: "4", description: "Medicine2", "tax-rate": 0, price: 10.45 },
-//    ],
-//    bottomNotice: "Kindly pay your invoice within 15 days.",
-//    settings: { currency: "USD" },
-//    translate: {},
-//    customize: {},
-// };
-
-// easyinvoice.createInvoice(data, function (result) {
-//    fs.writeFileSync("./InvoicesPdf/invoice" + data.information.number + ".pdf", result.pdf, "base64");
-//    response.status(200).json(res);
-// });

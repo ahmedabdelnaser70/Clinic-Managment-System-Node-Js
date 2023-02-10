@@ -1,4 +1,3 @@
-const { body } = require("express-validator");
 const mongoose = require ("mongoose");
 require("./../Models/clinicModel");
 const ClinicSchema = mongoose.model("clinics");

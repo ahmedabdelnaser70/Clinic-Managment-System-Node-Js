@@ -5,7 +5,6 @@ const salt = bcrypt.genSaltSync(saltRounds);
 require("../Models/patientModel");
 const patientSchema = mongoose.model("patients");
 
-// get all patient
 exports.getAllPatient = (request, response, next) => {
    let reqQuery = { ...request.query };
    let querystr = JSON.stringify(reqQuery);
@@ -32,7 +31,6 @@ exports.getAllPatient = (request, response, next) => {
       .catch((error) => next(error));
 };
 
-// get patient by id
 exports.getPatientById = (request, response, next) => {
    if(request.id == request.params.id || request.role == 'admin') {
       patientSchema
@@ -53,9 +51,8 @@ exports.getPatientById = (request, response, next) => {
    }
 };
 
-// Add new Patient data
 exports.addPatient = (request, response, next) => {
-   //const hash = bcrypt.hashSync(request.body.password, salt);
+   const hash = bcrypt.hashSync(request.body.password, salt);
    UserSchema.findOne({email: request.body.email}).then(function(data) {
       if(data == null) {
          let newPatient = new patientSchema({
@@ -65,8 +62,7 @@ exports.addPatient = (request, response, next) => {
             age: request.body.age,
             address: request.body.address,
             email: request.body.email,
-            password: request.body.password,
-            //password: hash,
+            password: hash,
             phone: request.body.phone,
          });
          if (request.file) {
@@ -95,7 +91,6 @@ exports.addPatient = (request, response, next) => {
    })
 };
 
-// update Patient data by id
 exports.updatePatient = (request, response, next) => {
    patientSchema.findOne({_id: request.params.id}, {_id: 0, email: 1, password: 1}).then(function(data) {
       if(data != null) {
@@ -164,7 +159,6 @@ exports.updatePatient = (request, response, next) => {
    })
 };
 
-// Delete Patient by id
 exports.deletePatient = (request, response, next) => {
    patientSchema
       .deleteOne({ _id: request.params.id })

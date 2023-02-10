@@ -133,7 +133,6 @@ exports.addDoctor = (request, response, next) => {
    });
 };
 
-//----------CRUD BY PARAM---------------------//
 exports.getDoctorById = (request, response, next) => {
    if(request.id == request.params.id || request.role == 'admin') {
       doctorSchema
@@ -169,8 +168,6 @@ exports.updateDoctorById = (request, response, next) => {
          let oldPassword = data.password;
          if(request.body.clinic != undefined) {
             clinicSchema.find({ _id: { $in: request.body.clinic } }).then((clinicData) => {
-               // console.log(clinicData.length);
-               // console.log(request.body.clinic.length);
                if (clinicData.length == request.body.clinic.length) {
                   clinicSchema
                      .updateMany(
@@ -292,4 +289,5 @@ function updateDoctor(request, oldEmail, oldPassword, next) {
       .catch((error) => {
          next(error);
       });
+   }
 };

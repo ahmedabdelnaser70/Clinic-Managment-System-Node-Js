@@ -1,4 +1,7 @@
 const mongoose = require("mongoose");
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+const salt = bcrypt.genSaltSync(saltRounds);
 const { updatePatient } = require("./patientController");
 require("../Models/employeeModel");
 const EmployeeSchema = mongoose.model("employees");
@@ -106,7 +109,7 @@ exports.add = (request, response, next) => {
       if(data == null) {
          ClinicSchema.findOne({ _id: request.body.clinic }, { _id: 1 }).then(function (data) {
             if (data != null) {
-               //const hash = bcrypt.hashSync(request.body.password, salt);
+               const hash = bcrypt.hashSync(request.body.password, salt);
                let newEmployee = new EmployeeSchema({
                   _id: request.params.id,
                   SSN: request.body.SSN,
@@ -114,8 +117,7 @@ exports.add = (request, response, next) => {
                   lastName: request.body.lastName,
                   age: request.body.age,
                   address: request.body.address,
-                  password: request.body.password,
-                  //password: hash,
+                  password: hash,
                   email: request.body.email,
                   phone: request.body.phone,
                   clinic: request.body.clinic,

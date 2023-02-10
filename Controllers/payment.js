@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 require("../Models/invoiceModel");
 const invoiceSchema = mongoose.model("invoices");
-
 var Secret_Key = "sk_test_51MYaafJbL5zohfa0alEKFf75zLL7urT5MJHomVHjPdFPokPCaCzt4KOVpDe1jBMu4FoRrJqvPLko14nYF1jDFlBY00FtvGPQg2";
 var stripe = require("stripe")(Secret_Key);
 //var Publishable_Key = 'pk_test_51MYaafJbL5zohfa0zpuoN9xtDjTYWA9zNmeoHOtmaOh0TkzIv2s0GZBeHqHojxPfRZXJIsR8V3X2q2mkUialqiPQ00sDMsKKEF'

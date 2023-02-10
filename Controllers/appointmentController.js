@@ -118,7 +118,6 @@ exports.addAppointment = (request, response, next) => {
         })
 }
 
-//----------------CRUD BY ID PARAM--------------------------------------//
 exports.getAppointmentById = (request, response, next) => {
     appointmentSchema.findOne({ _id: request.params.id })
         .populate({

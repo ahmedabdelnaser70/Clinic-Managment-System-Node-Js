@@ -5,7 +5,6 @@ let fs = require("fs");
 const appointmentSchema = mongoose.model("appointments")
 const invoiceSchema = mongoose.model("invoices")
 
-//get all appointment reports 
 exports.getAllAppointments = (request, response, next) => {
     let reqQuery = { ...request.query }; //using spread operator make any change on reqQuery wont affect request.query
     let querystr = JSON.stringify(reqQuery);
@@ -64,7 +63,6 @@ function formatDate(date) {
     return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear();
 }
 
-// Appointments Daily Report
 exports.getDailyAppointmentReport = (request, response, next) => {
 	let date = new Date();
 	appointmentSchema
@@ -79,7 +77,6 @@ exports.getDailyAppointmentReport = (request, response, next) => {
 	.catch((error) => next(error));
 };
 
-// Appointments Daily Reports for Clinic
 exports.getClinicDailyAppointmentReport = (request, response, next) => {
 	let date = new Date();
 	appointmentSchema
@@ -105,7 +102,6 @@ exports.getClinicDailyAppointmentReport = (request, response, next) => {
 	.catch((error) => next(error));
 };
 
-// Appointments Daily Reports for doctor
 exports.getDoctorDailyAppointmentReport = (request, response, next) => {
 	if(request.id == request.params.id || request.role == 'admin') {
 		let date = new Date();
@@ -125,8 +121,6 @@ exports.getDoctorDailyAppointmentReport = (request, response, next) => {
 	}
 };
 
-
-// Appointments Daily Reports for patient
 exports.getPatientDailyAppointmentReport = (request, response, next) => {
 	if(request.id == request.params.id || request.role == "admin") {
 		let date = new Date();
@@ -149,8 +143,6 @@ exports.getPatientDailyAppointmentReport = (request, response, next) => {
 	}
 };
 
-//------------------ Appointment reports for specific day ------------------------
-// Appointments Report for specific day 
 exports.getAppointmentReportForaDay = (request, response, next) => {
 	appointmentSchema
 	.find({ date:request.query.date},{_id:0,__v:0})
@@ -163,7 +155,6 @@ exports.getAppointmentReportForaDay = (request, response, next) => {
 	.catch((error) => next(error));
 };
 
-// Appointments Report for specific day for Clinic
 exports.getClinicAppointmentReportForaDay = (request, response, next) => {
 	appointmentSchema
 	.find({ date:request.query.date, clinic : request.params.id },{_id:0,__v:0})
@@ -188,7 +179,6 @@ exports.getClinicAppointmentReportForaDay = (request, response, next) => {
 	.catch((error) => next(error));
 };
 
-// Appointments Report for specifi day for doctor
 exports.getDoctorAppointmentReportForaDay = (request, response, next) => {
 	if(request.id == request.params.id || request.role == "admin") {
 		appointmentSchema
@@ -207,8 +197,6 @@ exports.getDoctorAppointmentReportForaDay = (request, response, next) => {
 	}
 };
 
-
-// Appointments report  for specifi day for patient 
 exports.getPatientAppointmentReportForaDay = (request, response, next) => {
 	if(request.id == request.params.id || request.role == "admin") {
 		appointmentSchema
@@ -232,7 +220,6 @@ exports.getPatientAppointmentReportForaDay = (request, response, next) => {
 
 /*************************** INVOICES REPORTS *************************** */
 
-// Invoices Daily Report => Done
 exports.getDailyInvoicesReport = (request, response, next) => {
 	let date = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "numeric", year: "numeric" });
 	invoiceSchema
@@ -246,7 +233,6 @@ exports.getDailyInvoicesReport = (request, response, next) => {
 	.catch((error) => next(error));
 };
 
-// invioces Daily Reports for Clinic => Done
 exports.getClinicDailyInvoicesReport = (request, response, next) => {
 	let date = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "numeric", year: "numeric" });
 	invoiceSchema
@@ -274,7 +260,6 @@ exports.getClinicDailyInvoicesReport = (request, response, next) => {
 	.catch((error) => next(error));
 };
 
-//Done
 exports.getPatientDailyInvoicesReport = (request, response, next) => {
 	if(request.id == request.params.id || request.role == "admin") {
 		let date = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "numeric", year: "numeric" });
@@ -296,9 +281,7 @@ exports.getPatientDailyInvoicesReport = (request, response, next) => {
 		next(error)
 	}
 };
-//--------------- invoices report for a specifc day ------------//
 
-// Invoices for specific day  Report => Done
 exports.getInvoicesReportForaDay = (request, response, next) => {
 	let date = request.query.date;
 	invoiceSchema
@@ -312,7 +295,6 @@ exports.getInvoicesReportForaDay = (request, response, next) => {
 	})
 };
 
-// Invoices for specific day  Report  for Clinic => Done
 exports.getClinicInvoicesReportForaDay = (request, response, next) => {
 	let date = request.query.date;
 	invoiceSchema
@@ -340,8 +322,6 @@ exports.getClinicInvoicesReportForaDay = (request, response, next) => {
 	.catch((error) => next(error));
 };
 
-
-// Invoices for specific day  Report  for patient
 exports.getPatientInvoicesReportForaDay = (request, response, next) => {
 	if(request.id == request.params.id || request.role == "admin") {
 		let date =  request.query.date;
@@ -362,9 +342,6 @@ exports.getPatientInvoicesReportForaDay = (request, response, next) => {
 		next(error)
 	}
 };
-
-
-//*********************************** pdf fuction ***************************************  
 
 function createPdf(doc) {
 	for(let res of doc) {

@@ -1,11 +1,10 @@
 const mongoose = require('mongoose');
-// const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 require('../Models/usersModel');
 const UserSchema = mongoose.model('users');
-exports.login = (request, response, next) => {
 
-    //check if he is the admin
+exports.login = (request, response, next) => {
     UserSchema.findOne({email: request.body.email}, {_id: 0, __v: 0}).then(function(data) {
         if(data != null) {
             // if (bcrypt.compareSync(request.body.password, data.password)) {
