@@ -11,12 +11,8 @@ router.route("/invoices")
 	.post(invoicePost, validator, controller.addInvoice)
 	.patch(invoicePatch, validator, controller.updateInvoice);
 
-<<<<<<< Updated upstream
-router.route("/invoices/:id").all(checkParamid, validator).get(controller.getInvoiceByID).patch(invoicePatch, controller.updateInvoice).delete(controller.deleteInvoice);
-=======
 router.route("/invoices/:id")
 	.all(authenticatioMW.checkAdmin, checkParamid, validator)
 	.get(controller.getInvoiceByID)
 	.patch(invoicePatch, controller.updateInvoice)
 	.delete(controller.deleteInvoice);
->>>>>>> Stashed changes

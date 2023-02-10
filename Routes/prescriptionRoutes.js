@@ -6,22 +6,22 @@ const validationError = require("../Middlewares/errorValidator")
 const authenticatioMW = require("../Middlewares/authentication")
 
 router.route("/presciption")
-	.get(authenticatioMW.checkAdmin, controller.getAllPresciptions)// admin
-	.post(authenticatioMW.checkAdminOrDoctor, ...PrescriptionValidation, validationError, controller.addPresciption) //admin & doctor
+	.get(authenticatioMW.checkAdmin, controller.getAllPresciptions)
+	.post(authenticatioMW.checkAdminOrDoctor, ...PrescriptionValidation, validationError, controller.addPresciption)
 
 router.route("/presciption/:id?")
 	.all(authenticatioMW.checkAdminOrDoctor)
-	.get(controller.getPresciptionById) //admin
-	.patch(...PrescriptionValidation, validationError, controller.updatePresciption) //admin & doctor
-	.delete(controller.deletePresciption) //admin&doctor
+	.get(controller.getPresciptionById)
+	.patch(...PrescriptionValidation, validationError, controller.updatePresciption)
+	.delete(controller.deletePresciption)
 
 router.route("/presciption/clinic/:id?")
-	.get(authenticatioMW.checkAdminOrDoctor, controller.getPresciptionsByClinicId) //admin & manager
+	.get(authenticatioMW.checkAdminOrDoctor, controller.getPresciptionsByClinicId)
 
 router.route("/presciption/doctor/:id?")
-	.get(authenticatioMW.checkAdminOrDoctor, controller.getPresciptionsByDoctorId) //admin & doctor
+	.get(authenticatioMW.checkAdminOrDoctor, controller.getPresciptionsByDoctorId)
 	
 router.route("/presciption/patient/:id?")
-	.get(authenticatioMW.checkAdminOrPatient, controller.getPresciptionsByPatientId) //admin & patient
+	.get(authenticatioMW.checkAdminOrPatient, controller.getPresciptionsByPatientId)
 
 module.exports = router;
