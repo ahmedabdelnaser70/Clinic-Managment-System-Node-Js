@@ -1,8 +1,8 @@
 const express = require("express");
 const app = express();
-const mongoose = require("mongoose"); //1
+const mongoose = require("mongoose");
 const doctorRouter = require("./Routes/doctorRoute");
-const patientRouter = require("./Routes/patientRoutes"); //Ahmed Abdelnaser
+const patientRouter = require("./Routes/patientRoutes");
 const clinicRouter = require("./Routes/clinicRoutes");
 const appointmentRouter = require("./Routes/appointmentRoute");
 const  medicineRoutes = require('./Routes/MedicineRoute');
@@ -14,13 +14,10 @@ const presciptionRouter = require("./Routes/prescriptionRoutes");
 const reportRouter = require("./Routes/reportRoute");
 const invoiceRouter = require("./Routes/invoiceRouter");
 const morgan = require("morgan");
-// const loginRouter = require("./Routes/login")
-// const checkToken = require("./Middelwares/authorization")
 
 require("dotenv").config();
 let port = process.env.PORT || 8080;
-mongoose.set("strictQuery", true); //2
-// emitter.setMaxListeners()
+mongoose.set("strictQuery", true);
 mongoose
    .connect(process.env.DB_URL, {
       useNewUrlParser: true,
@@ -39,20 +36,13 @@ mongoose
       console.log("DB Problem" + error);
    });
 
-app.use(express.json()); // to ready and json object write in body
+app.use(express.json());
 
-//Authontication
-// app.use(loginRouter)
-
-//Authorization
-// app.use(checkToken)
-
-//first layer
 const fs = require('fs')
 app.use(
 	morgan("tiny", {
 		stream: fs.createWriteStream("./access.log", {
-			flags: "a", // to continue writting on what exist in the file
+			flags: "a",
 		}),
 	})
 );
@@ -70,7 +60,7 @@ app.use(authenticatioMW.authentication);
 //Second Middleware
 app.use(clinicRouter);
 app.use(doctorRouter);
-app.use(patientRouter); //Ahmed Abdelnasers
+app.use(patientRouter);
 app.use(appointmentRouter);
 app.use(medicineRoutes);
 app.use(employeeRouter);
