@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 require("../Models/MedicineModel")
 const medicineSchema = mongoose.model("medicines")
 
-exports.getAllMedicines=(request,response,next)=>{
+exports.getAllMedicines=(request,response,next)=> {
 	let reqQuery = { ...request.query }; //using spread operator make any change on reqQuery wont affect request.query
     let querystr = JSON.stringify(reqQuery);
     querystr = querystr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
@@ -25,7 +25,7 @@ exports.getAllMedicines=(request,response,next)=>{
 
 }
 
-exports.addMedicine=(request,response,next)=>{
+exports.addMedicine=(request,response,next)=> {
 	let medicineObject = new medicineSchema({
 		name: request.body.name,
 		description: request.body.description,
@@ -39,7 +39,7 @@ exports.addMedicine=(request,response,next)=>{
 
 }
 
-exports.getMedicineByIdChild=(request,response,next)=>{
+exports.getMedicineByIdChild=(request,response,next)=> {
 	medicineSchema.find({_id:request.params.id})
 	.then((data)=>{
 		if (data.length!==0) {
@@ -52,7 +52,7 @@ exports.getMedicineByIdChild=(request,response,next)=>{
 
 }
 
-exports.updateMedicineById=(request,response,next)=>{
+exports.updateMedicineById=(request,response,next)=> {
 	medicineSchema.updateOne(
 		{
 			_id:request.params.id
@@ -72,7 +72,7 @@ exports.updateMedicineById=(request,response,next)=>{
 
 }
 
-exports.deleteMedicineById=(request,response,next)=>{
+exports.deleteMedicineById=(request,response,next)=> {
 	medicineSchema.deleteOne(
 		{
 			_id: request.params.id,
