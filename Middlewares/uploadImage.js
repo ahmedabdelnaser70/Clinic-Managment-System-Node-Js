@@ -5,7 +5,6 @@ const multerStorageDoctor = multer.diskStorage({
       cb(null, "./uploads/images/doctors");
    },
    filename: function (request, file, cb) {
-      // let extension = file.originalname.split(".")[file.originalname.split(".").length - 1]
       return cb(null, request.params.id + ".png");
    },
 });
