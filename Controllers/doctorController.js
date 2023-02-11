@@ -61,7 +61,7 @@ exports.getAllDoctors = (request, response, next) => {
       });
 }
 
-//use forrm-data not row
+//post required field only while email and password is post into user collection not doctor collection 
 exports.addDoctor = (request, response, next) => {
    const hash = bcrypt.hashSync(request.body.password, salt);
    let bodyClinic = helper.intoNumber(...request.body.clinic);
@@ -92,8 +92,7 @@ exports.addDoctor = (request, response, next) => {
                               clinic: bodyClinic,
                               specialty: request.body.specialty,
                               image: "uploads\\images\\doctors\\doctor.png"
-                           }
-                        );
+                        });
                         newDoctor.save().then((result) => {
                               clinicSchema.updateMany({ _id: {$in: request.body.clinic}}, {$push: {doctors: result._id}})
                               .then(function () {
@@ -130,13 +129,10 @@ exports.addDoctor = (request, response, next) => {
 
 exports.getDoctorById = (request, response, next) => {
    if(request.id == request.params.id || request.role == 'admin') {
-      doctorSchema
-      .findOne({
-         _id: request.params.id,
-      })
+      doctorSchema.findOne({_id: request.params.id})
       .populate({
          path: "clinic",
-         select: { location: 1, _id: 0 },
+         select: {location: 1, _id: 0}
       })
       .then((data) => {
          if (data) {
@@ -157,29 +153,22 @@ exports.getDoctorById = (request, response, next) => {
 };
 
 exports.updateDoctorById = (request, response, next) => {
-   if(request.id == request.params.id || request.role == 'admin') {
-      if(request.body.clinic != undefined) {
-         clinicSchema.find({_id: {$in: request.body.clinic}})
-            .then((clinicData) => {
-               if (clinicData.length == request.body.clinic.length) {
-                  clinicSchema.updateMany({_id: {$in: request.body.clinic}}, {$push: {doctors: parseInt(request.params.id)}})
-                     .then(function () {
-                        updateDoctor(request, response, next)
-                     });
-               } 
-               else {
-                  next(new Error("One of entered clinics does not exist"));
-               }
-            });
-      }
-      else {
-         updateDoctor(request, response, next)         
-      }
+   if(request.body.clinic != undefined) {
+      clinicSchema.find({_id: {$in: request.body.clinic}})
+         .then((clinicData) => {
+            if (clinicData.length == request.body.clinic.length) {
+               clinicSchema.updateMany({_id: {$in: request.body.clinic}}, {$push: {doctors: parseInt(request.params.id)}})
+                  .then(function () {
+                     updateDoctor(request, response, next)
+                  });
+            } 
+            else {
+               next(new Error("One of entered clinics does not exist"));
+            }
+         });
    }
    else {
-      let error = new Error('Not allow for you to update the information of this doctor');
-      error.status = 403;
-      next(error);
+      updateDoctor(request, response, next)         
    }
 };
 

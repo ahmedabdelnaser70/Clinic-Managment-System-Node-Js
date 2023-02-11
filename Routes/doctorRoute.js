@@ -12,7 +12,7 @@ router.route("/doctor")
    .post(...DoctorValidation, validator, controller.addDoctor);
 
 router.route("/doctor/:id?")
-   .all(authenticatioMW.checkAdminOrDoctor)
+   .all(authenticatioMW.checkDoctorID)
    .get(controller.getDoctorById)
    .patch(...DoctorValidation, controller.updateDoctorById)
    .delete(authenticatioMW.checkAdmin, controller.deleteDoctorById);
