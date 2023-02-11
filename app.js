@@ -13,6 +13,7 @@ const authenticatioMW = require('./Middlewares/authentication');
 const presciptionRouter = require("./Routes/prescriptionRoutes");
 const reportRouter = require("./Routes/reportRoute");
 const invoiceRouter = require("./Routes/invoiceRouter");
+const publicRouter = require("./Routes/publicRoutes");
 const morgan = require("morgan");
 
 require("dotenv").config();
@@ -22,7 +23,7 @@ mongoose
    .connect(process.env.DB_URL, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-   }) //3
+   })
    .then(function () {
       //4
       console.log("DB is connected");
@@ -47,9 +48,8 @@ app.use(
 	})
 );
 
-/*
-   register route
-*/
+//register route
+app.use(publicRouter);
 
 //login layer
 app.use(loginRouter);
@@ -71,12 +71,12 @@ app.use(invoiceRouter);
 
 
 //Third Middleware
-app.use((request, response, next) => {
+app.use((response) => {
    response.status(404).json({Data: "Not Found"});
 });
 
 // Error MiddleWare
-app.use((error, request, response, next) => {
+app.use((error, response) => {
    const status = error.status || 500
    response.status(status).json({message: "Error " + error});
 });

@@ -10,7 +10,7 @@ exports.getAllClinic = function(request, response, next) {
     let reqQuery = {...request.query};
     let querystr = JSON.stringify(reqQuery);
     querystr = querystr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
-    let query = ClinicSchema.find(JSON.parse(querystr));
+    let query = ClinicSchema.find(JSON.parse(querystr), {__v: 0});
     if(request.query.select) {
         let selectFields = request.query.select.split(',').join(' ');
         query = query.select(selectFields);
@@ -22,7 +22,7 @@ exports.getAllClinic = function(request, response, next) {
     query.populate([
 		{
 			path: "doctors",
-			select: {firstName:1, lastName: 1, specialty: 1, _id: 0 }
+			select: {firstName:1, lastName: 1, specialty: 1, _id: 0}
 		},
 		{
 			path: "manager",
@@ -43,7 +43,7 @@ exports.getClinicById = function(request, response, next) {
 		}).populate([
 			{
 				path: "doctors",
-				select: {firstName:1, lastName: 1, specialty: 1, _id: 0 }
+				select: {firstName:1, lastName: 1, specialty: 1, _id: 0}
 			},
 			{
 				path: "manager",
@@ -69,21 +69,13 @@ exports.getClinicById = function(request, response, next) {
 }
 
 exports.getAllClinicServices = function(request, response, next) {
-	ClinicSchema.findOne(
-		{
-			_id: request.params.id
-		}).populate([
-		{
+	ClinicSchema.find({}, {__v: 0, _id: 0, location: 0, mobilePhone: 0})
+	.populate({
 			path: "doctors",
-			select: {specialty: 1, _id: 0}
-		}
-	]).then(function(data) {
-			if(data != null) {
-				response.status(200).json(data.doctors);
-			}
-			else {
-				next(new Error("This clinic is not found"));
-			}
+			select: {firstName: 1, lastName: 1, specialty: 1, _id: 0}
+		})
+		.then(function(data) {
+			response.status(200).json(data);
         })
         .catch(function(error) {
             next(error);

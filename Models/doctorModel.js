@@ -27,25 +27,13 @@ const schema = mongoose.Schema({
         type: String,
         required: [true, 'doctor specialization is required']
     },
-    email: {
-        type: String,
-        unique: [true, 'Repeated Email Address'],
-        match: [
-            /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-            'Enter valid e-mail'
-        ]
-    },
-    password: {
-        type: String,
-        minLength: [5, 'password length must be > 5']
-    },
     address: addressSchema.addressSchema,
     specialty: {
         type: String,
         required: true
     },
     image: {
-        type: String,
+        type: String
     },
     phone: {
         type: String,

@@ -1,23 +1,23 @@
-const { body } = require("express-validator");
+const {body} = require("express-validator");
 
 exports.DoctorValidation = [
    body("firstName")
       .isAlpha()
       .withMessage("first name must be alpha")
       .isLength({ max: 50 })
-      .withMessage("first name characters must be <= 50"),
+      .withMessage("first name characters must be less than or equal 50"),
    body("lastName")
       .isAlpha()
       .withMessage("last name must be alpha")
       .isLength({ max: 50 })
-      .withMessage("last name characters must be <= 50"),
+      .withMessage("last name characters must be less than or equal  50"),
    body("age").isInt().withMessage("doctor age must be number"),
    body("email")
       .matches(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/)
       .withMessage("enter valid email"),
-   body("password").isString().isLength({ min: 5 }).withMessage("password minimun length must be >= 5"),
+   body("password").isString().isLength({ min: 5 }).withMessage("password minimun length must be more than or equal 5"),
    body("address").isObject().withMessage("address must be object"),
-   body("address.city").isString().withMessage("city must be string with characters <= 20"),
+   body("address.city").isString().withMessage("city must be string with characters less than or equal 20"),
    body("address.street").isString().withMessage("street must be number"),
    body("address.building").isInt().withMessage("building must be number"),
    body("image").optional().isString().withMessage("photo name must be string"),

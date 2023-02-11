@@ -7,7 +7,6 @@ const authenticatioMW = require('../Middlewares/authentication');
 
 router.route("/clinic")
 	.all(authenticatioMW.checkAdmin)
-	.get(controller.getAllClinic)
 	.post(...ClinicValidation, validationError, controller.addClinic)
 
 router.route("/clinic/:id?")

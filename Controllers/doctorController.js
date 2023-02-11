@@ -6,11 +6,12 @@ require("../Models/doctorModel");
 require("../Models/clinicModel");
 require("../Models/appointmentModel");
 require('../Models/usersModel');
-const helper = require("../helper/helperFunctions")
+const helper = require("../helper/helperFunctions");
 const doctorSchema = mongoose.model("doctors");
 const clinicSchema = mongoose.model("clinics");
 const appointmentSchema = mongoose.model("appointments");
 const UserSchema = mongoose.model('users');
+const fs = require('fs')
 
 exports.getAllDoctors = (request, response, next) => {
    let reqQuery = { ...request.query };
@@ -60,6 +61,7 @@ exports.getAllDoctors = (request, response, next) => {
       });
 }
 
+//use forrm-data not row
 exports.addDoctor = (request, response, next) => {
    const hash = bcrypt.hashSync(request.body.password, salt);
    let bodyClinic = helper.intoNumber(...request.body.clinic);
@@ -80,34 +82,28 @@ exports.addDoctor = (request, response, next) => {
                else {
                   UserSchema.findOne({email: request.body.email}).then(function(data){
                      if(data == null) {
-                        let newOne = {
-                           firstName: request.body.firstName,
-                           lastName: request.body.lastName,
-                           age: request.body.age,
-                           email: request.body.email,
-                           password: hash,
-                           address: request.body.address,
-                           phone: request.body.phone,
-                           clinic: bodyClinic,
-                           specialty: request.body.specialty,
-                        }
-                        if (request.file) {
-                           newOne.image = request.file.path;
-                        }
-                        else {
-                           newOne.image = "doctor.jpg";
-                        }
-                        let newDoctor = new doctorSchema(newOne);
+                        let newDoctor = new doctorSchema(
+                           {
+                              firstName: request.body.firstName,
+                              lastName: request.body.lastName,
+                              age: request.body.age,
+                              address: request.body.address,
+                              phone: request.body.phone,
+                              clinic: bodyClinic,
+                              specialty: request.body.specialty,
+                              image: "uploads\\images\\doctors\\doctor.png"
+                           }
+                        );
                         newDoctor.save().then((result) => {
                               clinicSchema.updateMany({ _id: {$in: request.body.clinic}}, {$push: {doctors: result._id}})
                               .then(function () {
-                                 let newEmail = new UserSchema({
+                                 let newUser = new UserSchema({
                                     email: request.body.email,
                                     password: hash,
                                     userId: result._id,
                                     role: 'doctor'
                                  })
-                                 newEmail.save().then(function() {
+                                 newUser.save().then(function() {
                                     response.status(200).json(result)
                                  })
                               }).catch((error) => {
@@ -118,7 +114,7 @@ exports.addDoctor = (request, response, next) => {
                         });
                      }
                      else {
-                        next(new Error("One of these clinics dosen't exist"));
+                        next(new Error("This email is already used"));
                      }
                   }).catch(function(error) {
                      next(error);
@@ -162,35 +158,23 @@ exports.getDoctorById = (request, response, next) => {
 
 exports.updateDoctorById = (request, response, next) => {
    if(request.id == request.params.id || request.role == 'admin') {
-      doctorSchema.findOne({_id: request.params.id}, {_id: 0, email: 1, password: 1}).then(function(data) {
-         if(data != null) {
-            let oldEmail = data.email;
-            let oldPassword = data.password;
-            if(request.body.clinic != undefined) {
-               clinicSchema.find({ _id: { $in: request.body.clinic } }).then((clinicData) => {
-                  if (clinicData.length == request.body.clinic.length) {
-                     clinicSchema
-                        .updateMany(
-                           { _id: { $in: request.body.clinic } },
-                           { $push: { doctors: parseInt(request.params.id) } }
-                        )
-                        .then(function () {
-                           updateDoctor(request, response, oldEmail, oldPassword, next)
-                        });
-                  } else {
-                     next(new Error("One of entered clinics does not exist"));
-                  }
-               });
-            }
-            else {
-               updateDoctor(request, response, oldEmail, oldPassword, next)         
-            }
-         
-         }
-         else {
-            next(new Error("This Doctor is not found"));
-         }
-      })
+      if(request.body.clinic != undefined) {
+         clinicSchema.find({_id: {$in: request.body.clinic}})
+            .then((clinicData) => {
+               if (clinicData.length == request.body.clinic.length) {
+                  clinicSchema.updateMany({_id: {$in: request.body.clinic}}, {$push: {doctors: parseInt(request.params.id)}})
+                     .then(function () {
+                        updateDoctor(request, response, next)
+                     });
+               } 
+               else {
+                  next(new Error("One of entered clinics does not exist"));
+               }
+            });
+      }
+      else {
+         updateDoctor(request, response, next)         
+      }
    }
    else {
       let error = new Error('Not allow for you to update the information of this doctor');
@@ -199,104 +183,85 @@ exports.updateDoctorById = (request, response, next) => {
    }
 };
 
-exports.deleteDoctorById = (request, response, next) => {
-   doctorSchema.findOne({_id: request.params.id},{email: 1, _id: 0}).then(function(data) {
-      if(data != null) {
-         UserSchema.deleteOne({email: data.email}).then(function() {
-            doctorSchema.deleteOne({
-               _id: request.params.id
-            }).then(result => {
-                  appointmentSchema.deleteOne({
-                     doctorName: parseInt(request.params.id)
-                  }).then(function() {
-                        clinicSchema.updateMany({
-                           doctors: parseInt(request.params.id)
-                        }, {
-                           $pull: { doctors: parseInt(request.params.id) }
-                        }).then(function(){
-                           response.status(200).json({ message: "Deleted" });
-                        }).catch(error => {
-                           next(error);
-                        });
-                     }).catch(error => {
-                        next(error);
-                     });
-               }).catch(error => {
-                  next(error);
-               })
-         })
+exports.changeDoctorImageById = (request, response, next) => {
+   doctorSchema.updateOne({id: request.params.id}, {
+      $set: {
+         image: request.file.path
+      }
+   }).then(function(result) {
+      if(result.modifiedCount == 0) {
+         response.status(200).json({Updated: true, Message: "Nothing is changed"});
       }
       else {
-         next(new Error("This doctor is not found"))
+         response.status(200).json({Updated: true, Message: "The image is updated successfully"});
       }
-   });
+   })
+}
+
+exports.deleteDoctorById = (request, response, next) => {   
+   UserSchema.deleteOne({role: "doctor", userId: request.params.id}).then(function() {
+      doctorSchema.findOneAndDelete({
+         _id: request.params.id
+      }).then(result => {
+         if(result != null) {            
+            appointmentSchema.deleteOne({
+               doctorName: parseInt(request.params.id)
+            }).then(function() {
+                  clinicSchema.updateMany({
+                     doctors: parseInt(request.params.id)
+                  }, {
+                     $pull: { doctors: parseInt(request.params.id) }
+                  }).then(function(){
+                     fs.unlink("uploads\\images\\doctors\\" + request.params.id + ".png", function (result) {
+                        if (result) {
+                           console.log("This image is not found");
+                           response.status(200).json({Deleted: false});
+                        } else {
+                           console.log("File removed:", "uploads\\images\\doctors\\" + request.params.id + ".png");
+                           response.status(200).json({Deleted: true});
+                        }
+                     });
+                  }).catch(error => {
+                     next(error);
+                  });
+               }).catch(error => {
+                  next(error);
+               });
+         }
+         else {
+            let error = new Error("This doctor is not found")
+            error.status = 403;
+            next(error);
+         }
+         }).catch(error => {
+            next(error);
+         })
+   })
 };
 
-function updateDoctor(request, response, oldEmail, oldPassword, next) {
-   let doctorData = {
-      firstName: request.body.firstName,
-      lastName: request.body.lastName,
-      age: request.body.age,
-      address: request.body.address,
-      email: request.body.email,
-      password: request.body.password,
-      phone: request.body.phone,
-      clinic: request.body.clinic,
-   };
-   if (request.file) {
-      doctorData.image = request.file.path;
+function updateDoctor(request, response, next) {
+   let nameProperty = ["firstName", "lastName", "age", "address", "phone", "clinic", "specialty"]
+   let doctorData = {};
+   for(let prop of nameProperty) {
+      if(request.body[prop] != null) {
+         doctorData[prop] = request.body[prop];
+      }
    }
-   if((request.body.email != undefined && oldEmail == request.body.email.trim()) && (request.body.password != undefined && oldPassword == request.body.password.trim())) {
-      doctorSchema
-         .updateOne(
-            {
-               _id: request.params.id,
-            },
-            {
-               $set: doctorData,
-            }
-         )
+   if(doctorData != {}) {
+      doctorSchema.updateOne({_id: request.params.id}, {$set: doctorData})
          .then((result) => {
-            response.status(201).json({
-               message: "updated successfully",
-            });
+            if(result.modifiedCount == 0) {
+               response.status(200).json({Updated: true, Message: "Nothing is changed"});
+            }
+            else {
+               response.status(200).json({Updated: true, Message: "Doctor is updated successfully"});
+            }
          })
          .catch((error) => {
             next(error);
          });
    }
    else {
-      UserSchema.updateOne(
-         {email: oldEmail}, 
-         {
-            $set: {
-               email: request.body.email || oldEmail,
-               password: request.body.password || oldPassword
-            }
-      })
-      .then(function() {
-         doctorSchema
-            .updateOne(
-               {
-                  _id: request.params.id,
-               },
-               {
-                  $set: doctorData,
-               }
-            )
-            .then((resu) => {
-               if(resu.modifiedCount == 0) {
-                  response.status(200).json({Updated: true, Message: "Nothing is changed"});
-               }
-               else {
-                  response.status(200).json({Updated: true, Message: "Doctor is updated successfully"});
-               }
-            })
-            .catch((error) => {
-               next(error);
-            });
-      }).catch(function() {
-         next(new Error("This email is already used"))
-      })
+      response.status(200).json({Updated: true, Message: "Nothing is changed"});
    }
 }

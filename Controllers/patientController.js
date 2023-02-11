@@ -2,8 +2,11 @@ const mongoose = require("mongoose");
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const salt = bcrypt.genSaltSync(saltRounds);
+const multer  = require('multer')
 require("../Models/patientModel");
+require("../Models/usersModel");
 const patientSchema = mongoose.model("patients");
+const UserSchema = mongoose.model("users");
 
 exports.getAllPatient = (request, response, next) => {
    let reqQuery = { ...request.query };
