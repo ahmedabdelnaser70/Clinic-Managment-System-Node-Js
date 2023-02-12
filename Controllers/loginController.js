@@ -10,6 +10,7 @@ exports.login = (request, response, next) => {
         let newResponse = {
             email: "admin@gmail.com",
             password: "123456",
+            role: "admin",
             token: token
         };
         response.status(200).json(newResponse);

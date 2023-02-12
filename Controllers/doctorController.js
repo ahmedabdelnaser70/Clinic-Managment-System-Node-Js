@@ -6,20 +6,21 @@ require("../Models/doctorModel");
 require("../Models/clinicModel");
 require("../Models/appointmentModel");
 require('../Models/usersModel');
+const fs = require('fs')
 const helper = require("../helper/helperFunctions");
 const doctorSchema = mongoose.model("doctors");
 const clinicSchema = mongoose.model("clinics");
 const appointmentSchema = mongoose.model("appointments");
 const UserSchema = mongoose.model('users');
-const fs = require('fs')
 
 exports.getAllDoctors = (request, response, next) => {
    let reqQuery = { ...request.query };
+   console.log(reqQuery)
    let querystr = JSON.stringify(reqQuery);
    querystr = querystr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
    let query;
-   let query1 = doctorSchema.find(JSON.parse(querystr));
-   let query2 = doctorSchema.find(JSON.parse(querystr))
+   let query1 = doctorSchema.find(JSON.parse(querystr), {__v: 0});
+   let query2 = doctorSchema.find(JSON.parse(querystr), {__v: 0})
       .populate({
          path: "clinic",
          select: { name: 1, location: 1, _id: 0 },
@@ -54,12 +55,37 @@ exports.getAllDoctors = (request, response, next) => {
 
    query
       .then((data) => {
-         response.status(200).json({ count: data.length, result: data });
+         response.status(200).json(data);
       })
       .catch((error) => {
          next(error);
       });
 }
+
+exports.getDoctorById = (request, response, next) => {
+   if(request.id == request.params.id || request.role == 'admin') {
+      doctorSchema.findOne({_id: request.params.id})
+      .populate({
+         path: "clinic",
+         select: {location: 1, _id: 0}
+      })
+      .then((data) => {
+         if (data) {
+            response.status(201).json(data);
+         } else {
+            next(new Error("Doctor does not exist"));
+         }
+      })
+      .catch((error) => {
+         next(error);
+      });
+   }
+   else {
+      let error = new Error('Not allow for you to show the information of this doctor');
+      error.status = 403;
+      next(error);
+   }
+};
 
 //post required field only while email and password is post into user collection not doctor collection 
 exports.addDoctor = (request, response, next) => {
@@ -125,31 +151,6 @@ exports.addDoctor = (request, response, next) => {
          next(new Error("One of these clinics dosen't exist"));
       }
    })
-};
-
-exports.getDoctorById = (request, response, next) => {
-   if(request.id == request.params.id || request.role == 'admin') {
-      doctorSchema.findOne({_id: request.params.id})
-      .populate({
-         path: "clinic",
-         select: {location: 1, _id: 0}
-      })
-      .then((data) => {
-         if (data) {
-            response.status(201).json(data);
-         } else {
-            next(new Error("Doctor does not exist"));
-         }
-      })
-      .catch((error) => {
-         next(error);
-      });
-   }
-   else {
-      let error = new Error('Not allow for you to show the information of this doctor');
-      error.status = 403;
-      next(error);
-   }
 };
 
 exports.updateDoctorById = (request, response, next) => {
