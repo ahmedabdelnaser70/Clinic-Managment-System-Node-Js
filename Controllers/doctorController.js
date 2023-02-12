@@ -14,77 +14,44 @@ const appointmentSchema = mongoose.model("appointments");
 const UserSchema = mongoose.model('users');
 
 exports.getAllDoctors = (request, response, next) => {
-   let reqQuery = { ...request.query };
-   console.log(reqQuery)
-   let querystr = JSON.stringify(reqQuery);
-   querystr = querystr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
-   let query;
-   let query1 = doctorSchema.find(JSON.parse(querystr), {__v: 0});
-   let query2 = doctorSchema.find(JSON.parse(querystr), {__v: 0})
-      .populate({
-         path: "clinic",
-         select: { name: 1, location: 1, _id: 0 },
-      });
-
-      
-   //Filter Fields 
-   if (request.query.select) {
-      if (request.query.select.includes('clinic')) {
-         query = query2;
-      } else {
-         query = query1;
+   let sortAndFiltering = helper.sortAndFiltering(request);
+   doctorSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
+   .populate({
+      path: "clinic",
+      select: {location: 1, _id: 0},
+   })
+   .sort(sortAndFiltering.sortedFields)
+   .then(function(result) {
+      if(result.length > 0) {
+         response.status(200).json(result);
       }
-      let selectFields = request.query.select.split(',').join(' ');
-      query = query.select(selectFields);
-   } else {
-      query = query2
-   }
-
-   //Sort Fields
-   if (request.query.sort) {
-      let sortFields = request.query.sort.split(",").join(" ");
-      query = query2.sort(sortFields);
-      if (request.query.select) {
-         let selectFields = request.query.select.split(',').join(' ');
-         query = query1.select(selectFields).sort(sortFields);
-         if(request.query.select.includes('clinic')){
-            query = query2.select(selectFields).sort(sortFields);
-         }
-      }
-   }
-
-   query
-      .then((data) => {
-         response.status(200).json(data);
-      })
-      .catch((error) => {
+      else {
+         let error = new Error("Empty");
+         error.status = 403;
          next(error);
-      });
+      }
+   }).catch(function(error) {
+      next(error);
+   })
 }
 
 exports.getDoctorById = (request, response, next) => {
-   if(request.id == request.params.id || request.role == 'admin') {
-      doctorSchema.findOne({_id: request.params.id})
-      .populate({
-         path: "clinic",
-         select: {location: 1, _id: 0}
-      })
-      .then((data) => {
-         if (data) {
-            response.status(201).json(data);
-         } else {
-            next(new Error("Doctor does not exist"));
-         }
-      })
-      .catch((error) => {
-         next(error);
-      });
-   }
-   else {
-      let error = new Error('Not allow for you to show the information of this doctor');
-      error.status = 403;
+   let sortAndFiltering = helper.sortAndFiltering(request);
+   doctorSchema.findOne({_id: request.params.id}, sortAndFiltering.selectedFields)
+   .populate({
+      path: "clinic",
+      select: {location: 1, _id: 0}
+   })
+   .then((data) => {
+      if (data) {
+         response.status(201).json(data);
+      } else {
+         next(new Error("Doctor does not exist"));
+      }
+   })
+   .catch((error) => {
       next(error);
-   }
+   });
 };
 
 //post required field only while email and password is post into user collection not doctor collection 

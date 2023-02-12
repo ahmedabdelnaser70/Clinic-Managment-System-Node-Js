@@ -38,7 +38,7 @@ module.exports.checkAdminOrDoctor = ((request, response, next) => {
     if(request.role == 'admin' || (request.role == 'doctor' && request.id == request.params.id)) {
         next();
     } else {
-        let error = new Error('Not Authorized');
+        let error = new Error('Not allow for you to display the information of this doctor');
         error.status = 403;
         next(error);
     }
