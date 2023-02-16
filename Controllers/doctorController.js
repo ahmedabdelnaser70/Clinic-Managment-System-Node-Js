@@ -8,14 +8,14 @@ require("../Models/appointmentModel");
 require('../Models/usersModel');
 const fs = require('fs')
 const helper = require("../helper/helperFunctions");
-const doctorSchema = mongoose.model("doctors");
-const clinicSchema = mongoose.model("clinics");
-const appointmentSchema = mongoose.model("appointments");
+const DoctorSchema = mongoose.model("doctors");
+const ClinicSchema = mongoose.model("clinics");
+const AppointmentSchema = mongoose.model("appointments");
 const UserSchema = mongoose.model('users');
 
 exports.getAllDoctors = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
-   doctorSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
+   DoctorSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
    .populate({
       path: "clinic",
       select: {location: 1, _id: 0},
@@ -37,7 +37,7 @@ exports.getAllDoctors = (request, response, next) => {
 
 exports.getDoctorById = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
-   doctorSchema.findOne({_id: request.params.id}, sortAndFiltering.selectedFields)
+   DoctorSchema.findOne({_id: request.params.id}, sortAndFiltering.selectedFields)
    .populate({
       path: "clinic",
       select: {location: 1, _id: 0}
@@ -58,13 +58,13 @@ exports.getDoctorById = (request, response, next) => {
 exports.addDoctor = (request, response, next) => {
    const hash = bcrypt.hashSync(request.body.password, salt);
    let bodyClinic = helper.intoNumber(...request.body.clinic);
-   clinicSchema.find({_id: {$in: bodyClinic}}, {doctors: 1, _id: 0}).then((clinicData) => {
+   ClinicSchema.find({_id: {$in: bodyClinic}}, {doctors: 1, _id: 0}).then((clinicData) => {
       if (clinicData.length == bodyClinic.length) {
          let doctorIds = [];
          clinicData.forEach((id) => {
             doctorIds.push(...id.doctors);
          })
-         doctorSchema.find({_id: {$in: doctorIds}}, {firstName: 1, lastName: 1, _id: 0})
+         DoctorSchema.find({_id: {$in: doctorIds}}, {firstName: 1, lastName: 1, _id: 0})
             .then((doctorData) => {
                let flag = doctorData.some(function (doctor) {
                   return request.body.firstName == doctor.firstName && request.body.lastName == doctor.lastName
@@ -75,7 +75,7 @@ exports.addDoctor = (request, response, next) => {
                else {
                   UserSchema.findOne({email: request.body.email}).then(function(data){
                      if(data == null) {
-                        let newDoctor = new doctorSchema(
+                        let newDoctor = new DoctorSchema(
                            {
                               firstName: request.body.firstName,
                               lastName: request.body.lastName,
@@ -87,7 +87,7 @@ exports.addDoctor = (request, response, next) => {
                               image: "uploads\\images\\doctors\\doctor.png"
                         });
                         newDoctor.save().then((result) => {
-                              clinicSchema.updateMany({ _id: {$in: request.body.clinic}}, {$push: {doctors: result._id}})
+                              ClinicSchema.updateMany({ _id: {$in: request.body.clinic}}, {$push: {doctors: result._id}})
                               .then(function () {
                                  let newUser = new UserSchema({
                                     email: request.body.email,
@@ -122,10 +122,10 @@ exports.addDoctor = (request, response, next) => {
 
 exports.updateDoctorById = (request, response, next) => {
    if(request.body.clinic != undefined) {
-      clinicSchema.find({_id: {$in: request.body.clinic}})
+      ClinicSchema.find({_id: {$in: request.body.clinic}})
          .then((clinicData) => {
             if (clinicData.length == request.body.clinic.length) {
-               clinicSchema.updateMany({_id: {$in: request.body.clinic}}, {$push: {doctors: parseInt(request.params.id)}})
+               ClinicSchema.updateMany({_id: {$in: request.body.clinic}}, {$push: {doctors: parseInt(request.params.id)}})
                   .then(function () {
                      updateDoctor(request, response, next)
                   });
@@ -141,7 +141,7 @@ exports.updateDoctorById = (request, response, next) => {
 };
 
 exports.changeDoctorImageById = (request, response, next) => {
-   doctorSchema.updateOne({id: request.params.id}, {
+   DoctorSchema.updateOne({id: request.params.id}, {
       $set: {
          image: request.file.path
       }
@@ -157,14 +157,14 @@ exports.changeDoctorImageById = (request, response, next) => {
 
 exports.deleteDoctorById = (request, response, next) => {   
    UserSchema.deleteOne({role: "doctor", userId: request.params.id}).then(function() {
-      doctorSchema.findOneAndDelete({
+      DoctorSchema.findOneAndDelete({
          _id: request.params.id
       }).then(result => {
          if(result != null) {            
-            appointmentSchema.deleteOne({
+            AppointmentSchema.deleteOne({
                doctorName: parseInt(request.params.id)
             }).then(function() {
-                  clinicSchema.updateMany({
+                  ClinicSchema.updateMany({
                      doctors: parseInt(request.params.id)
                   }, {
                      $pull: { doctors: parseInt(request.params.id) }
@@ -205,7 +205,7 @@ function updateDoctor(request, response, next) {
       }
    }
    if(doctorData != {}) {
-      doctorSchema.updateOne({_id: request.params.id}, {$set: doctorData})
+      DoctorSchema.updateOne({_id: request.params.id}, {$set: doctorData})
          .then((result) => {
             if(result.modifiedCount == 0) {
                response.status(200).json({Updated: true, Message: "Nothing is changed"});

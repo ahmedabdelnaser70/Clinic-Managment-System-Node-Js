@@ -44,6 +44,16 @@ module.exports.checkAdminOrDoctor = ((request, response, next) => {
     }
 })
 
+module.exports.checkAdminOrManager = ((request, response, next) => {
+    if(request.role == 'admin' || request.role == 'doctor') {
+        next();
+    } else {
+        let error = new Error('Not allow for you to display the information of this doctor');
+        error.status = 403;
+        next(error);
+    }
+})
+
 module.exports.checkDoctorID = ((request, response, next) => {
     if(request.role == 'admin') {
         DoctorSchema.findOne({_id: request.params.id}).then(function(result) {
@@ -80,7 +90,7 @@ module.exports.checkEmployeeID = ((request, response, next) => {
             }
         })
     }
-    else if(request.role == 'doctor' && request.id == request.params.id) {
+    else if(request.role == 'employee' && request.id == request.params.id) {
         next();
     } 
     else {
@@ -103,7 +113,7 @@ module.exports.checkPatientID = ((request, response, next) => {
             }
         })
     }
-    else if(request.role == 'doctor' && request.id == request.params.id) {
+    else if(request.role == 'patient' && request.id == request.params.id) {
         next();
     } 
     else {

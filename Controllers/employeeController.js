@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const salt = bcrypt.genSaltSync(saltRounds);
-const { updatePatient } = require("./patientController");
+const fs = require('fs')
+const helper = require("../helper/helperFunctions");
 require("../Models/employeeModel");
 const EmployeeSchema = mongoose.model("employees");
 require("./../Models/clinicModel");
@@ -10,104 +11,92 @@ const ClinicSchema = mongoose.model("clinics");
 require("../Models/usersModel")
 const UserSchema = mongoose.model('users');
 
-exports.get = (request, response, next) => {
-   let reqQuery = { ...request.query };
-   let querystr = JSON.stringify(reqQuery);
-   querystr = querystr.replace(/\b(gt|gte|lt|lte|in)\b/g, (match) => `$${match}`);
-   let query = EmployeeSchema.find(JSON.parse(querystr), { __v: 0 });
-   if (request.query.select) {
-      let selectFields = request.query.select.split(",").join(" ");
-      query = query.select(selectFields);
-   }
-   if (request.query.sort) {
-      let sortFields = request.query.sort.split(",").join(" ");
-      query = query.sort(sortFields);
-   }
-   query
-      .populate({
-         path: "clinic",
-         select: { location: 1, _id: 0 },
-      })
-      .then(function (data) {
-         response.status(200).json(data);
-      })
-      .catch(function (error) {
-         next(error);
-      });
+exports.getAllEmployees = (request, response, next) => {
+   let sortAndFiltering = helper.sortAndFiltering(request);
+   EmployeeSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
+   .populate({
+      path: "clinic",
+      select: {location: 1, _id: 0},
+   })
+   .sort(sortAndFiltering.sortedFields)
+   .then(function(result) {
+      if(result.length > 0) {
+         response.status(200).json(result);
+      }
+      else {
+         response.status(200).json({Message: "Empty"});
+      }
+   }).catch(function(error) {
+      next(error);
+   })
 };
 
 exports.getEmployeeByID = (request, response, next) => {
-   if(request.id == request.params.id || request.role == "admin") {
-      EmployeeSchema.findOne({ _id: request.params.id }, { __v: 0 })
-         .populate({
-            path: "clinic",
-            select: { location: 1, _id: 0 },
-         })
-         .then((data) => {
-            if (data) response.status(200).json(data);
-            else next(new Error("employee doesn't exist"));
-         })
-         .catch((error) => next(error));
-   }
-   else {
-      let error = new Error('Not allow for you to show the information of this employee');
-      error.status = 403;
-      next(error);
-   }
-};
-
-exports.getEmployeeBySSN = (request, response, next) => {
-   EmployeeSchema.findOne({ SSN: request.params.id }, { __v: 0 })
+   let sortAndFiltering = helper.sortAndFiltering(request);
+   EmployeeSchema.findOne({_id: request.params.id}, sortAndFiltering.selectedFields)
    .populate({
       path: "clinic",
-      select: { location: 1, manager: 1, _id: 0 },
+      select: {location: 1, _id: 0}
    })
    .then((data) => {
       if (data) {
-         if(request.id == data._id || request.id == data.clinic.manager || request.role == "admin") {
-            response.status(200).json(data);
-         }
-         else {
-            let error = new Error('Not allow for you to show the information of this employee');
-            error.status = 403;
-            next(error);
-         }
+         response.status(201).json(data);
+      } else {
+         let error = new Error("Employee does not exist");
+         error.status = 403;
+         next(error);
       }
-      else 
-      {
-         next(new Error("employee doesn't exist"));
+   })
+   .catch((error) => {
+      next(error);
+   });
+};
+
+exports.getEmployeeBySSN = (request, response, next) => {
+   let sortAndFiltering = helper.sortAndFiltering(request);
+   EmployeeSchema.findOne({SSN: request.params.id}, sortAndFiltering.selectedFields)
+   .populate({
+      path: "clinic",
+      select: {location: 1, _id: 0}
+   })
+   .then((data) => {
+      if (data) {
+         response.status(201).json(data);
+      } else {
+         next(new Error("Employee does not exist"));
       }
-   }).catch((error) => next(error));
+   })
+   .catch((error) => {
+      next(error);
+   });
 };
 
 exports.getEmployeesByClinicId = (request, response, next) => {
-   EmployeeSchema.find({ clinic: request.params.id }, { __v: 0, password: 0 })
+   let sortAndFiltering = helper.sortAndFiltering(request);
+   EmployeeSchema.find({clinic: request.params.id}, sortAndFiltering.selectedFields)
    .populate({
       path: "clinic",
-      select: { manager: 1, _id: 0 },
+      select: {location: 1, _id: 0}
    })
    .then((data) => {
       if (data.length > 0) {
-         if(request.id == data.manager || request.role == "admin") {
-            response.status(200).json(data);
-         }
-         else {
-            let error = new Error('Not allow for you to show the information of this employee');
-            error.status = 403;
-            next(error);
-         }
+         response.status(201).json(data);
+      } else {
+         let error = new Error("Employee does not exist");
+         error.status = 403;
+         next(error);
       }
-      else {
-         next(new Error("This clinic doesn't have any employees"));
-      }
-      })
-      .catch((error) => next(error));
+   })
+   .catch((error) => {
+      next(error);
+   });
 };
 
-exports.add = (request, response, next) => {
+//post required field only while email and password is post into user collection not doctor collection 
+exports.addEmployee = (request, response, next) => {
    UserSchema.findOne({email: request.body.email}).then(function(data) {
       if(data == null) {
-         ClinicSchema.findOne({ _id: request.body.clinic }, { _id: 1 }).then(function (data) {
+         ClinicSchema.findOne({_id: request.body.clinic}, {_id: 1, __v: 0}).then(function (data) {
             if (data != null) {
                const hash = bcrypt.hashSync(request.body.password, salt);
                let newEmployee = new EmployeeSchema({
@@ -117,20 +106,17 @@ exports.add = (request, response, next) => {
                   lastName: request.body.lastName,
                   age: request.body.age,
                   address: request.body.address,
-                  password: hash,
-                  email: request.body.email,
+                  job: request.body.job,
+                  salary: request.body.salary,
                   phone: request.body.phone,
                   clinic: request.body.clinic,
+                  image: "uploads\\images\\employees\\employee.png"
                });
-               if (request.file) {
-                  newEmployee.image = request.file.path;
-               }
-               newEmployee
-                  .save()
+               newEmployee.save()
                   .then((result) => {
                      let newEmail = new UserSchema({
                         email: request.body.email,
-                        password: request.body.password,
+                        password: hash,
                         userId: result._id,
                         role: 'employee'
                      })
@@ -152,92 +138,110 @@ exports.add = (request, response, next) => {
    })
 };
 
-exports.update = (request, response, next) => {
-   EmployeeSchema.findOne({_id: request.params.id}, {email: 1, password: 1, _id: 0}).then(function(data) {
-      if(data != null) {
-         let oldEmail = data.email;
-         let oldPassword = data.password
-         ClinicSchema.findOne({_id: request.body.clinic}, {_id: 1}).then(function(data) {
-            if(data != null) {
-               let employeeData = {
-                  SSN: request.body.SSN,
-                  firstName: request.body.firstName,
-                  lastName: request.body.lastName,
-                  age: request.body.age,
-                  address: request.body.address,
-                  password: request.body.password,
-                  email: request.body.email,
-                  phone: request.body.phone,
-                  clinic: request.body.clinic,
-               };
-               if (request.file) {
-                  employeeData.image = request.file.path;
-               }
-               if(oldEmail == request.body.email.trim() && oldPassword == request.body.password.trim()) {
-                  EmployeeSchema.updateOne(
-                     { _id: request.params.id },
-                     {
-                        $set: employeeData,
-                     }
-                  )
-                  .then((result) => {
-                     if(result.modifiedCount == 0) {
-                        response.status(200).json({Updated: true, Message: "Nothing is changed"});
-                     }
+exports.updateEmployee = (request, response, next) => {
+   let nameProperty = ["SSN", "firstName", "lastName", "age", "address", "phone"]
+   updateEmployee(nameProperty, request, response, next)
+};
+
+exports.updateEmployeeByManager = (request, response, next) => {
+   EmployeeSchema.findOne({_id: request.params.id}, {_id: 0, clinic: 1})
+   .populate({
+      path: "clinic",
+      select: {manager: 1, _id: 0}
+   }).then(function(data) {
+      if(data) {
+         if(data.clinic.manager == request.id) {
+            if(request.body.clinic != undefined) {
+               ClinicSchema.findOne({_id: request.body.clinic})
+               .then((clinicData) => {
+                  if (clinicData) {
+                        let nameProperty = ["SSN", "firstName", "lastName", "age", "address", "phone", "job", "clinic", "salary"]
+                        updateEmployee(nameProperty, request, response, next)
+                     } 
                      else {
-                        response.status(200).json({Updated: true, Message: "Employee is updated successfully"});
+                        next(new Error("This clinic does not exist"));
                      }
-                  })
-                  .catch((error) => next(error));
-               }
-               else {
-                  UserSchema.updateOne(
-                     {email: oldEmail}, 
-                     {
-                        $set: {
-                           email: request.body.email,
-                           password: request.body.password
-                        }
-                  }).then(function() {
-                     EmployeeSchema.updateOne(
-                        { _id: request.params.id },
-                        {
-                           $set: employeeData,
-                        }
-                     )
-                     .then((result) => {
-                        if(result.modifiedCount == 0) {
-                           response.status(200).json({Updated: true, Message: "Nothing is changed"});
-                        }
-                        else {
-                           response.status(200).json({Updated: true, Message: "Employee is updated successfully"});
-                        }
-                     })
-                     .catch((error) => next(error));
-                  }).catch(function() {
-                     next(new Error("This email is already used"))
-                  })
-               }
+                  });
             }
             else {
-               next(new Error("This clinic not found"));
+               let nameProperty = ["SSN", "firstName", "lastName", "age", "address", "phone", "job", "salary"]
+               updateEmployee(nameProperty, request, response, next)
             }
-         })
+         }
+         else {
+            let error = new Error("Not allow for you to update the information of this employee")
+            error.status = 403
+            next(error)
+         }
       }
       else {
-         next(new Error("This Employee is not found"));
+         next(new Error("This employee is not found"))
       }
    })
 };
 
-exports.delete = (request, response, next) => {
-   EmployeeSchema.deleteOne({ _id: request.params.id })
-      .then((result) => {
-         if (result.acknowledged && result.deletedCount == 1) {
-            response.status(200).json({ Deleted: true, Message: "This Employee is deleted successfully" });
-         } else {
-            response.status(200).json({ Deleted: false, Message: "This Employee is not found" });
+exports.changeEmployeeImageById = (request, response, next) => {
+   EmployeeSchema.updateOne({id: request.params.id}, {
+      $set: {
+         image: request.file.path
+      }
+   }).then(function(result) {
+      if(result.modifiedCount == 0) {
+         response.status(200).json({Updated: true, Message: "Nothing is changed"});
+      }
+      else {
+         response.status(200).json({Updated: true, Message: "The image is updated successfully"});
+      }
+   })
+}
+
+exports.deleteEmployee = (request, response, next) => {
+   UserSchema.deleteOne({role: "employee", userId: request.params.id}).then(function() {
+      EmployeeSchema.findOneAndDelete({_id: request.params.id})
+      .then(result => {
+         if(result != null) {            
+            fs.unlink("uploads\\images\\doctors\\" + request.params.id + ".png", function (result) {
+               if (result) {
+                  response.status(200).json({Deleted: false, Message: "This image is not found"});
+               } else {
+                  console.log("File removed:", "uploads\\images\\doctors\\" + request.params.id + ".png");
+                  response.status(200).json({Deleted: true});
+               }
+            });
          }
-      })
-      .catch((error) => next(error));
+         else {
+            let error = new Error("This employee is not found")
+            error.status = 403;
+            next(error);
+         }
+         }).catch(error => {
+            next(error);
+         })
+   })
 };
+
+function updateEmployee(nameProperty, request, response, next) {
+   let employeeData = {};
+   for(let prop of nameProperty) {
+      if(request.body[prop] != null) {
+         employeeData[prop] = request.body[prop];
+      }
+   }
+   if(employeeData != {}) {
+      EmployeeSchema.updateOne({_id: request.params.id}, {$set: employeeData})
+         .then((result) => {
+            if(result.modifiedCount == 0) {
+               response.status(200).json({Updated: true, Message: "Nothing is changed"});
+            }
+            else {
+               response.status(200).json({Updated: true, Message: "Employee is updated successfully"});
+            }
+         })
+         .catch((error) => {
+            next(error);
+         });
+   }
+   else {
+      response.status(200).json({Updated: true, Message: "Nothing is changed"});
+   }
+}

@@ -71,7 +71,7 @@ app.use(invoiceRouter);
 
 
 //Third Middleware
-app.use((response) => {
+app.use((request, response, next) => {
    response.status(404).json({Data: "Not Found"});
 });
 
