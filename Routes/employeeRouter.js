@@ -6,8 +6,6 @@ const controller = require("../Controllers/employeeController");
 const {uploadEmployee} = require("../Middlewares/uploadImage");
 const authenticatioMW = require('../Middlewares/authentication');
 
-module.exports = router;
-
 router.route("/employees")
    .all(authenticatioMW.checkAdmin)
    .get(controller.getAllEmployees)
@@ -31,3 +29,6 @@ router.route("/employees/clinic/:id")
 
 router.route("/employees/image/:id?")
    .patch(authenticatioMW.checkEmployeeID, uploadEmployee, controller.changeEmployeeImageById)
+
+
+module.exports = router;

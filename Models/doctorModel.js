@@ -21,13 +21,16 @@ const schema = mongoose.Schema({
     age: {
         type: Number,
         min: [25, 'doctor\'s age must be > 25'],
-        max: [60, 'doctor\'s age must be < 60'],
+        max: [60, 'doctor\'s age must be < 60']
     },
     specialty:{
         type: String,
         required: [true, 'doctor specialization is required']
     },
-    address: addressSchema.addressSchema,
+    address: {
+        type: addressSchema.addressSchema,
+        required: true
+    },
     specialty: {
         type: String,
         required: true
@@ -43,7 +46,7 @@ const schema = mongoose.Schema({
     clinic: {
         type: Array,
         required: true,
-        ref: 'clinics',
+        ref: 'clinics'
     }
 })
 

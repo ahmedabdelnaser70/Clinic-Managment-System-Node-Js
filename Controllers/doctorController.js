@@ -121,23 +121,8 @@ exports.addDoctor = (request, response, next) => {
 };
 
 exports.updateDoctorById = (request, response, next) => {
-   if(request.body.clinic != undefined) {
-      ClinicSchema.find({_id: {$in: request.body.clinic}})
-         .then((clinicData) => {
-            if (clinicData.length == request.body.clinic.length) {
-               ClinicSchema.updateMany({_id: {$in: request.body.clinic}}, {$push: {doctors: parseInt(request.params.id)}})
-                  .then(function () {
-                     updateDoctor(request, response, next)
-                  });
-            } 
-            else {
-               next(new Error("One of entered clinics does not exist"));
-            }
-         });
-   }
-   else {
-      updateDoctor(request, response, next)         
-   }
+   let nameProperty = ["firstName", "lastName", "age", "address", "phone", "specialty"]
+   updateDoctor(nameProperty, request, response, next)      
 };
 
 exports.changeDoctorImageById = (request, response, next) => {
@@ -196,8 +181,7 @@ exports.deleteDoctorById = (request, response, next) => {
    })
 };
 
-function updateDoctor(request, response, next) {
-   let nameProperty = ["firstName", "lastName", "age", "address", "phone", "clinic", "specialty"]
+function updateDoctor(nameProperty, request, response, next) {
    let doctorData = {};
    for(let prop of nameProperty) {
       if(request.body[prop] != null) {

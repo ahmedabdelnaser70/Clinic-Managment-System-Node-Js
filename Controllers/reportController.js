@@ -5,6 +5,10 @@ let fs = require("fs");
 const appointmentSchema = mongoose.model("appointments")
 const invoiceSchema = mongoose.model("invoices")
 
+function formatDate(date) {
+    return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear();
+}
+
 exports.getAllAppointments = (request, response, next) => {
     let reqQuery = { ...request.query }; //using spread operator make any change on reqQuery wont affect request.query
     let querystr = JSON.stringify(reqQuery);
@@ -57,10 +61,6 @@ exports.getAllAppointments = (request, response, next) => {
         .catch(error => {
             next(error);
         })
-}
-
-function formatDate(date) {
-    return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear();
 }
 
 exports.getDailyAppointmentReport = (request, response, next) => {
