@@ -3,12 +3,11 @@ const router = express.Router();
 const patientController = require("../Controllers/patientController");
 const validator = require("../Middlewares/errorValidator");
 const {patientPost} = require("../Middlewares/patientValidation");
-const {uploadPatient} = require("../Middlewares/uploadImage");
 const clinicController = require("./../Controllers/clinicController");
 
 
 router.route("/patient")
-    .post(uploadPatient, patientPost, validator, patientController.addPatient);
+    .post(patientPost, validator, patientController.addPatient);
 
 router.route("/clinic")
 	.get(clinicController.getAllClinic)

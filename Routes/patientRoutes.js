@@ -2,19 +2,20 @@ const express = require("express");
 const router = express.Router();
 const controller = require("../Controllers/patientController");
 const validator = require("../Middlewares/errorValidator");
-const {patientPatch, checkparamid } = require("../Middlewares/patientValidation");
+const {patientPatch} = require("../Middlewares/patientValidation");
 const {uploadPatient} = require("../Middlewares/uploadImage");
 const authenticatioMW = require("../Middlewares/authentication");
 
-router
-   .route("/patient")
+router.route("/patients")
    .get(authenticatioMW.checkAdmin, controller.getAllPatient)
 
-router
-   .route("/patient/:id")
-   .all(authenticatioMW.checkAdminOrPatient, checkparamid, validator)
+router.route("/patients/:id?")
+   .all(authenticatioMW.checkAdminOrPatient)
    .get(controller.getPatientById)
-   .patch(uploadPatient, patientPatch, validator, controller.updatePatient)
+   .patch(patientPatch, validator, controller.updatePatient)
    .delete(authenticatioMW.checkAdmin, controller.deletePatient);
+
+router.route("/patients/image/:id?")
+   .patch(authenticatioMW.checkPatientID, uploadPatient, controller.changePatientImageById)
 
 module.exports = router;

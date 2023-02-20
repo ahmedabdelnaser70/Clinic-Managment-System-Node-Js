@@ -2,81 +2,64 @@ const mongoose = require("mongoose");
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const salt = bcrypt.genSaltSync(saltRounds);
-const multer  = require('multer')
+const fs = require('fs')
+const helper = require("../helper/helperFunctions");
 require("../Models/patientModel");
 require("../Models/usersModel");
-const patientSchema = mongoose.model("patients");
+const PatientSchema = mongoose.model("patients");
 const UserSchema = mongoose.model("users");
 
 exports.getAllPatient = (request, response, next) => {
-   let reqQuery = { ...request.query };
-   let querystr = JSON.stringify(reqQuery);
-   querystr = querystr.replace(/\b(gt|gte|lt|lte|in)\b/g, (match) => `$${match}`);
-
-   let query = patientSchema.find(JSON.parse(querystr));
-
-   //Select Fields
-   if (request.query.select) {
-      let selectFields = request.query.select.split(",").join(" ");
-      query = query.select(selectFields);
-   }
-
-   //Sort Fields
-   if (request.query.sort) {
-      let sortFields = request.query.sort.split(",").join(" ");
-      query = query.sort(sortFields);
-   }
-
-   query
-      .then((data) => {
-         response.status(200).json({ count: data.length, result: data });
-      })
-      .catch((error) => next(error));
+   let sortAndFiltering = helper.sortAndFiltering(request);
+   PatientSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
+   .sort(sortAndFiltering.sortedFields)
+   .then(function(result) {
+      if(result.length > 0) {
+         response.status(200).json(result);
+      }
+      else {
+         response.status(200).json({Message: "Empty"});
+      }
+   }).catch(function(error) {
+      next(error);
+   })
 };
 
 exports.getPatientById = (request, response, next) => {
-   if(request.id == request.params.id || request.role == 'admin') {
-      patientSchema
-         .findOne({ _id: request.params.id })
-         .then((data) => {
-            if (data) {
-               response.status(200).json(data);
-            } else {
-               next(new Error("This patient is not found"));
-            }
-         })
-         .catch((error) => next(error));
-   }
-   else {
-      let error = new Error('Not allow for you to show the information of this patient');
-      error.status = 403;
+   let sortAndFiltering = helper.sortAndFiltering(request);
+   PatientSchema.findOne({_id: request.params.id}, sortAndFiltering.selectedFields)
+   .then((data) => {
+      if (data) {
+         response.status(201).json(data);
+      } else {
+         let error = new Error("Patient does not exist");
+         error.status = 403;
+         next(error);
+      }
+   })
+   .catch((error) => {
       next(error);
-   }
+   });
 };
 
 exports.addPatient = (request, response, next) => {
    const hash = bcrypt.hashSync(request.body.password, salt);
    UserSchema.findOne({email: request.body.email}).then(function(data) {
       if(data == null) {
-         let newPatient = new patientSchema({
+         let newPatient = new PatientSchema({
             _id: request.body.id,
             firstName: request.body.firstName,
             lastName: request.body.lastName,
             age: request.body.age,
             address: request.body.address,
-            email: request.body.email,
-            password: hash,
             phone: request.body.phone,
+            image: "uploads\\images\\patients\\patient.png"
          });
-         if (request.file) {
-            newPatient.image = request.file.path;
-         }
-         newPatient
-            .save()
+         newPatient.save()
             .then((result) => {
                let newEmail = new UserSchema({
                   email: request.body.email,
-                  password: request.body.password,
+                  password: hash,
                   userId: result._id,
                   role: 'patient'
                })
@@ -95,78 +78,72 @@ exports.addPatient = (request, response, next) => {
 };
 
 exports.updatePatient = (request, response, next) => {
-   patientSchema.findOne({_id: request.params.id}, {_id: 0, email: 1, password: 1}).then(function(data) {
-      if(data != null) {
-         let oldEmail = data.email;
-         let oldPassword = data.oldPassword
-         let patientData = {
-            firstName: request.body.firstName,
-            lastName: request.body.lastName,
-            age: request.body.age,
-            address: request.body.address,
-            "address.city": request.body.city,
-            "address.street": request.body.street,
-            "address.building": request.body.building,
-            email: request.body.email,
-            password: request.body.password,
-            phone: request.body.phone,
-         };
-         if (request.file) {
-            patientData.image = request.file.path;
-         }
-         if(oldEmail == request.body.email && oldPassword == request.body.password) {
-            patientSchema
-               .updateOne(
-                  {_id: request.params.id},
-                  {
-                     $set: patientData,
-                  }
-               )
-               .then(() => {
-                  response.status(200).json({ message: "Updated Successfully" });
-               })
-               .catch((error) => next(error));
-         }
-         else {
-            UserSchema.updateOne({email: oldEmail}, 
-               {
-                  $set: {
-                     email: request.body.email,
-                     password: request.body.password
-                  }
-            }).then(function() {
-               patientSchema
-               .updateOne(
-                  {_id: request.params.id},
-                  {
-                     $set: patientData,
-                  }
-               )
-               .then((resu) => {
-                  if(resu.modifiedCount == 0) {
-                     response.status(200).json({Updated: true, Message: "Nothing is changed"});
-                  }
-                  else {
-                     response.status(200).json({Updated: true, Message: "Employee is updated successfully"});
-                  }
-               })
-               .catch((error) => next(error));
-            }).catch(function() {
-               next(new Error("This email is already used"))
-            })
-         }
+   let nameProperty = ["firstName", "lastName", "age", "address", "phone"]
+   updatePatientData(nameProperty, request, response, next)
+};
+
+exports.changePatientImageById = (request, response, next) => {
+   PatientSchema.updateOne({id: request.params.id}, {
+      $set: {
+         image: request.file.path
+      }
+   }).then(function(result) {
+      if(result.modifiedCount == 0) {
+         response.status(200).json({Updated: true, Message: "Nothing is changed"});
       }
       else {
-         next(new Error("This Patient is not found"));
+         response.status(200).json({Updated: true, Message: "The image is updated successfully"});
       }
+   })
+}
+
+exports.deletePatient = (request, response, next) => {
+   UserSchema.deleteOne({role: "employee", userId: request.params.id}).then(function() {
+      PatientSchema.findOneAndDelete({_id: request.params.id})
+      .then(result => {
+         if(result != null) {            
+            fs.unlink("uploads\\images\\patients\\" + request.params.id + ".png", function (result) {
+               if (result) {
+                  response.status(200).json({Deleted: false, Message: "This image is not found"});
+               } else {
+                  console.log("File removed:", "uploads\\images\\patients\\" + request.params.id + ".png");
+                  response.status(200).json({Deleted: true});
+               }
+            });
+         }
+         else {
+            let error = new Error("This patients is not found")
+            error.status = 403;
+            next(error);
+         }
+         }).catch(error => {
+            next(error);
+         })
    })
 };
 
-exports.deletePatient = (request, response, next) => {
-   patientSchema
-      .deleteOne({ _id: request.params.id })
-      .then(() => {
-         response.status(200).json({ message: "Deleted Successfully" });
-      })
-      .catch((error) => next(error));
-};
+function updatePatientData(nameProperty, request, response, next) {
+   let PatientData = {};
+   for(let prop of nameProperty) {
+      if(request.body[prop] != null) {
+         PatientData[prop] = request.body[prop];
+      }
+   }
+   if(PatientData != {}) {
+      PatientSchema.updateOne({_id: request.params.id}, {$set: PatientData})
+         .then((result) => {
+            if(result.modifiedCount == 0) {
+               response.status(200).json({Updated: true, Message: "Nothing is changed"});
+            }
+            else {
+               response.status(200).json({Updated: true, Message: "Patient is updated successfully"});
+            }
+         })
+         .catch((error) => {
+            next(error);
+         });
+   }
+   else {
+      response.status(200).json({Updated: true, Message: "Nothing is changed"});
+   }
+}

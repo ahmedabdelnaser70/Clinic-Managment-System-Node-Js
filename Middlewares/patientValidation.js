@@ -1,6 +1,4 @@
-const { body, param } = require("express-validator");
-
-let checkparamid = param("id").isInt().withMessage("Id should be integer");
+const {body} = require("express-validator");
 
 let patientPost = [
    body("firstName")
@@ -45,4 +43,4 @@ let patientPatch = [
    body("image").optional().isString().withMessage("photo name must be string"),
 ];
 
-module.exports = { patientPost, patientPatch, checkparamid };
+module.exports = {patientPost, patientPatch};

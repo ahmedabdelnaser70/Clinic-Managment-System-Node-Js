@@ -6,7 +6,6 @@ exports.intoNumber = function(...arr) {
 	return result;
 }
 
-
 exports.sortAndFiltering = function(request) {
 	let reqQuery = JSON.stringify(request.query);
 	reqQuery = reqQuery.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
