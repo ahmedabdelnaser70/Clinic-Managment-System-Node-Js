@@ -46,7 +46,7 @@ exports.getDoctorById = (request, response, next) => {
       if (data) {
          response.status(201).json(data);
       } else {
-         next(new Error("Doctor does not exist"));
+         next(new Error("This doctor does not exist"));
       }
    })
    .catch((error) => {
@@ -121,7 +121,7 @@ exports.addDoctor = (request, response, next) => {
 };
 
 exports.updateDoctorById = (request, response, next) => {
-   let nameProperty = ["firstName", "lastName", "age", "address", "phone", "specialty"]
+   let nameProperty = ["firstName", "lastName", "age", "address", "phone"]
    updateDoctor(nameProperty, request, response, next)      
 };
 
@@ -189,13 +189,20 @@ function updateDoctor(nameProperty, request, response, next) {
       }
    }
    if(doctorData != {}) {
-      DoctorSchema.updateOne({_id: request.params.id}, {$set: doctorData})
+      DoctorSchema.findOneAndUpdate({_id: request.params.id}, {$set: doctorData})
          .then((result) => {
-            if(result.modifiedCount == 0) {
-               response.status(200).json({Updated: true, Message: "Nothing is changed"});
+            if(result) {
+               if(result.modifiedCount == 0) {
+                  response.status(200).json({Updated: true, Message: "Nothing is changed"});
+               }
+               else {
+                  response.status(200).json({Updated: true, Message: "Doctor is updated successfully"});
+               }
             }
             else {
-               response.status(200).json({Updated: true, Message: "Doctor is updated successfully"});
+               let error = new Error("This doctor is not found");
+               error.status = 404;
+               next(error);
             }
          })
          .catch((error) => {

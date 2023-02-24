@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 require("../Models/doctorModel");
 require("../Models/patientModel");
 require("../Models/employeeModel");
+require("../Models/clinicModel");
+const ClinicSchema = mongoose.model("clinics");
 const DoctorSchema = mongoose.model("doctors");
 const PatientSchema = mongoose.model("patients");
 const EmployeeSchema = mongoose.model("employees");
@@ -34,44 +36,36 @@ module.exports.checkAdmin = ((request, response, next)=>{
     }
 })
 
+//Used
 module.exports.checkAdminOrDoctor = ((request, response, next) => {
     if(request.role == 'admin' || (request.role == 'doctor' && request.id == request.params.id)) {
         next();
     } else {
-        let error = new Error('Not allow for you to display the information of this doctor');
+        let error = new Error('Not allow for you to display or update the information of this doctor');
         error.status = 403;
         next(error);
     }
 })
 
+//Used
 module.exports.checkAdminOrManager = ((request, response, next) => {
-    if(request.role == 'admin' || request.role == 'doctor') {
-        next();
-    } else {
-        let error = new Error('Not allow for you to display the information of this doctor');
-        error.status = 403;
-        next(error);
-    }
-})
-
-module.exports.checkDoctorID = ((request, response, next) => {
     if(request.role == 'admin') {
-        DoctorSchema.findOne({_id: request.params.id}).then(function(result) {
-            if(result != null) {
-                next();
+        next()
+    }
+    else if(request.role == 'doctor') {
+        ClinicSchema.findOne({_id: request.params.id}, {manager: 1, _id: 0}).then(function(data) {
+            if(data.manager == request.id) {
+                next()
             }
             else {
-                let error = new Error('This doctor is not found');
+                let error = new Error('Not allow for you to display or update the information of this clinic');
                 error.status = 403;
                 next(error);
             }
         })
-    }
-    else if(request.role == 'doctor' && request.id == request.params.id) {
-        next();
     } 
     else {
-        let error = new Error('Not Authorized');
+        let error = new Error('Not allow for you to display the information of this doctor');
         error.status = 403;
         next(error);
     }

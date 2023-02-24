@@ -12,13 +12,13 @@ router.route("/doctors")
    .post(...addDoctorValidation, validator, controller.addDoctor);
 
 router.route("/doctors/:id?")
-   .all(authenticatioMW.checkDoctorID)
+   .all(authenticatioMW.checkAdminOrDoctor)
    .get(controller.getDoctorById)
    .patch(...patchDoctorValidation, controller.updateDoctorById)
    .delete(authenticatioMW.checkAdmin, controller.deleteDoctorById);
 
 router.route("/doctors/image/:id?")
-   .patch(authenticatioMW.checkDoctorID, uploadDoctor, controller.changeDoctorImageById)
+   .patch(authenticatioMW.checkAdminOrDoctor, uploadDoctor, controller.changeDoctorImageById)
 
 
 module.exports = router;

@@ -6,13 +6,10 @@ const {patientPost} = require("../Middlewares/patientValidation");
 const clinicController = require("./../Controllers/clinicController");
 
 
-router.route("/patient")
+router.route("/patients")
     .post(patientPost, validator, patientController.addPatient);
 
-router.route("/clinic")
+router.route("/clinics")
 	.get(clinicController.getAllClinic)
-
-router.route("/clinic/services")
-	.get(clinicController.getAllClinicServices)
 
 module.exports = router;
