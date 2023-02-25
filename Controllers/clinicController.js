@@ -9,7 +9,6 @@ const EmployeeSchema = mongoose.model("employees");
 
 exports.getAllClinic = function(request, response, next) {
 	let sortAndFiltering = helper.sortAndFiltering(request);
-	sortAndFiltering.selectedFields.__v = 0;
 	ClinicSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
 	.populate([
 		{

@@ -107,7 +107,7 @@ function createPdf(res) {
       let fontBold = "Helvetica-Bold";
 
       let sellerInfo = {
-         companyName: "iti clinic",
+         companyName: "ITI clinic",
          address: "Mansoura",
          city: "Mansoura",
          pincode: "400017",

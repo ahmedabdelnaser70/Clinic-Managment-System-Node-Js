@@ -36,6 +36,5 @@ exports.sortAndFiltering = function(request) {
 			}
 		}
 	}
-
 	return {reqQuery, selectedFields, sortedFields}
 }

@@ -11,10 +11,10 @@ const doctorSchema = mongoose.model('doctors');
 const patientSchema = mongoose.model('patients');
 const EmployeeSchema = mongoose.model('employees');
 
-// let sortAndFiltering = helper.sortAndFiltering(request);
 
 
 exports.getAllAppointments = (request, response, next) => {
+    // let sortAndFiltering = helper.sortAndFiltering(request);
     let reqQuery = { ...request.query }; //using spread operator make any change on reqQuery wont affect request.query
     let querystr = JSON.stringify(reqQuery);
     querystr = querystr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
@@ -55,8 +55,8 @@ exports.getAllAppointments = (request, response, next) => {
     }
     else {
         query = query.populate({path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }})
-        .populate({path: 'patient', select: { firstName: 1, lastName: 1 }})
-        .populate({path: 'clinic', select: { name: 1, location: 1, _id: 0 }})
+        .populate({path: 'patient', select: {firstName: 1, lastName: 1}})
+        .populate({path: 'clinic', select: {name: 1, location: 1, _id: 0}})
     }
 
     if (request.query.sort) {
@@ -71,6 +71,96 @@ exports.getAllAppointments = (request, response, next) => {
         .catch(error => {
             next(error);
         })
+}
+
+exports.getappointmentsByClinicId = function (request, response, next) {
+    EmployeeSchema.find({ clinic: request.params.id }, {email: 0, password: 0}).then(function(date){
+        if(date.length > 0) {
+            let action = date.some(function(emp) {
+                return request.id == emp._id
+            })
+            if(action || request.role == 'admin') {
+                appointmentSchema.find({ clinic: request.params.id })
+                    .populate({
+                        path: 'clinic', select: { name: 1, location: 1, _id: 0 }
+                    })
+                    .populate({
+                        path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }
+                    })
+                    .populate({
+                        path: 'patient', select: { firstName: 1, lastName: 1 }
+                    })
+                    .then(result => {
+                        response.status(200).json(result);
+                    })
+                    .catch(error => {
+                        next(error);
+                    })
+            }
+            else {
+                let error = new Error("Not Allow for you to show the appointments of this clinic");
+                error.status = 403
+                next(error);
+            }
+        }
+        else {
+            let error = new Error("Not Allow for you to show the appointments of this clinic");
+            error.status = 403
+            next(error);
+        }
+    })
+}
+
+exports.getappointmentsByDoctorId = function (request, response, next) {
+    if(request.id == request.params.id || request.role == "admin") {
+        appointmentSchema.find({ doctorName: request.params.id })
+            .populate({
+                path: 'clinic', select: { name: 1, location: 1, _id: 0 }
+            })
+            .populate({
+                path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }
+            })
+            .populate({
+                path: 'patient', select: { firstName: 1, lastName: 1 }
+            })
+            .then(result => {
+                response.status(200).json(result);
+            })
+            .catch(error => {
+                next(error);
+            })
+    }
+    else {
+        let error = new Error("Not Allow for you to show the appointments of this doctor");
+        error.status = 403
+        next(error);
+    }
+}
+
+exports.getappointmentsByPatientId = function (request, response, next) {
+    if(request.id == request.params.id || request.role == "admin") {
+        appointmentSchema.find({ patient: request.params.id })
+            .populate({
+                path: 'clinic', select: { name: 1, location: 1, _id: 0 }
+            })
+            .populate({
+                path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }
+            })
+            .populate({
+                path: 'patient', select: { firstName: 1, lastName: 1 }
+            })
+            .then(result => {
+                response.status(200).json(result);
+            })
+            .catch(error => {
+                next(error);
+            })
+    }
+    else {
+        let error = new Error("Not Allow for you to show the appointments of this patient");
+        error.status = 403
+        next(error);
+    }
 }
 
 exports.addAppointment = (request, response, next) => {
@@ -201,94 +291,4 @@ exports.deleteAppointmentById = (request, response, next) => {
         .catch(error => {
             next(error);
         })
-}
-
-exports.getappointmentsByClinicId = function (request, response, next) {
-    EmployeeSchema.find({ clinic: request.params.id }, {email: 0, password: 0}).then(function(date){
-        if(date.length > 0) {
-            let action = date.some(function(emp) {
-                return request.id == emp._id
-            })
-            if(action || request.role == 'admin') {
-                appointmentSchema.find({ clinic: request.params.id })
-                    .populate({
-                        path: 'clinic', select: { name: 1, location: 1, _id: 0 }
-                    })
-                    .populate({
-                        path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }
-                    })
-                    .populate({
-                        path: 'patient', select: { firstName: 1, lastName: 1 }
-                    })
-                    .then(result => {
-                        response.status(200).json(result);
-                    })
-                    .catch(error => {
-                        next(error);
-                    })
-            }
-            else {
-                let error = new Error("Not Allow for you to show the appointments of this clinic");
-                error.status = 403
-                next(error);
-            }
-        }
-        else {
-            let error = new Error("Not Allow for you to show the appointments of this clinic");
-            error.status = 403
-            next(error);
-        }
-    })
-}
-
-exports.getappointmentsByDoctorId = function (request, response, next) {
-    if(request.id == request.params.id || request.role == "admin") {
-        appointmentSchema.find({ doctorName: request.params.id })
-            .populate({
-                path: 'clinic', select: { name: 1, location: 1, _id: 0 }
-            })
-            .populate({
-                path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }
-            })
-            .populate({
-                path: 'patient', select: { firstName: 1, lastName: 1 }
-            })
-            .then(result => {
-                response.status(200).json(result);
-            })
-            .catch(error => {
-                next(error);
-            })
-    }
-    else {
-        let error = new Error("Not Allow for you to show the appointments of this doctor");
-        error.status = 403
-        next(error);
-    }
-}
-
-exports.getappointmentsByPatientId = function (request, response, next) {
-    if(request.id == request.params.id || request.role == "admin") {
-        appointmentSchema.find({ patient: request.params.id })
-            .populate({
-                path: 'clinic', select: { name: 1, location: 1, _id: 0 }
-            })
-            .populate({
-                path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }
-            })
-            .populate({
-                path: 'patient', select: { firstName: 1, lastName: 1 }
-            })
-            .then(result => {
-                response.status(200).json(result);
-            })
-            .catch(error => {
-                next(error);
-            })
-    }
-    else {
-        let error = new Error("Not Allow for you to show the appointments of this patient");
-        error.status = 403
-        next(error);
-    }
 }
