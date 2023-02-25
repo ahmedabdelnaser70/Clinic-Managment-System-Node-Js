@@ -4,11 +4,15 @@ require('../Models/clinicModel');
 require('../Models/doctorModel');
 require('../Models/patientModel');
 require('../Models/employeeModel');
+const helper = require("../helper/helperFunctions");
 const appointmentSchema = mongoose.model('appointments');
 const clinicSchema = mongoose.model('clinics');
 const doctorSchema = mongoose.model('doctors');
 const patientSchema = mongoose.model('patients');
 const EmployeeSchema = mongoose.model('employees');
+
+// let sortAndFiltering = helper.sortAndFiltering(request);
+
 
 exports.getAllAppointments = (request, response, next) => {
     let reqQuery = { ...request.query }; //using spread operator make any change on reqQuery wont affect request.query
@@ -66,7 +70,7 @@ exports.getAllAppointments = (request, response, next) => {
         })
         .catch(error => {
             next(error);
-        })
+        })
 }
 
 exports.addAppointment = (request, response, next) => {
