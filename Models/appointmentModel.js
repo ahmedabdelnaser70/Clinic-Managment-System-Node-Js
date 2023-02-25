@@ -22,7 +22,7 @@ const schema = mongoose.Schema({
     },
     date: {
         type: String,
-        match: [/^(0?[1-9]|[12][0-9]|3[01])[\/\-](0?[1-9]|1[012])[\/\-]\d{4}$/, 'Date must be like 31/02/2023'],
+        match: [/^(0?[1-9]|[12][0-9]|3[01])[\/\-](0?[1-9]|1[012])[\/\-]\d{4}$/, 'Date must be like 30/03/2023'],
         required: [true, 'the date is required']
     },
     timeFrom: {
