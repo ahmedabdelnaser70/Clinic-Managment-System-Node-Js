@@ -83,16 +83,23 @@ exports.updatePatient = (request, response, next) => {
 };
 
 exports.changePatientImageById = (request, response, next) => {
-   PatientSchema.updateOne({id: request.params.id}, {
+   PatientSchema.findOneAndUpdate({id: request.params.id}, {
       $set: {
          image: request.file.path
       }
    }).then(function(result) {
-      if(result.modifiedCount == 0) {
-         response.status(200).json({Updated: true, Message: "Nothing is changed"});
+      if(result) {
+         if(result.modifiedCount == 0) {
+            response.status(200).json({Updated: true, Message: "Nothing is changed"});
+         }
+         else {
+            response.status(200).json({Updated: true, Message: "The image is updated successfully"});
+         }
       }
       else {
-         response.status(200).json({Updated: true, Message: "The image is updated successfully"});
+         let error = new Error("This patient is not found");
+         error.status = 404;
+         next(error);
       }
    })
 }
@@ -130,13 +137,20 @@ function updatePatientData(nameProperty, request, response, next) {
       }
    }
    if(PatientData != {}) {
-      PatientSchema.updateOne({_id: request.params.id}, {$set: PatientData})
+      PatientSchema.findByIdAndUpdate({_id: request.params.id}, {$set: PatientData})
          .then((result) => {
-            if(result.modifiedCount == 0) {
-               response.status(200).json({Updated: true, Message: "Nothing is changed"});
+            if(result) {
+               if(result.modifiedCount == 0) {
+                  response.status(200).json({Updated: true, Message: "Nothing is changed"});
+               }
+               else {
+                  response.status(200).json({Updated: true, Message: "Patient is updated successfully"});
+               }
             }
             else {
-               response.status(200).json({Updated: true, Message: "Patient is updated successfully"});
+               let error = new Error("This patient is not found");
+               error.status = 404;
+               next(error);
             }
          })
          .catch((error) => {

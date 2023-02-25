@@ -12,23 +12,23 @@ router.route("/employees")
    .post(PostEmployeeValidation, validator, controller.addEmployee)
 
 router.route("/employees/:id")
-   .all(authenticatioMW.checkEmployeeID)
+   .all(authenticatioMW.checkAdminOrEmployee)
    .get(controller.getEmployeeByID)
    .patch(PatchEmployeeValidation, validator, controller.updateEmployee)
    .delete(authenticatioMW.checkAdmin, controller.deleteEmployee);
 
 router.route("/employees/manage/:id")
-   .all(authenticatioMW.checkAdminOrManager)
+   .all(authenticatioMW.checkAdminOrManagerEmployee)
    .patch(PatchEmployeeValidation, controller.updateEmployeeByManager)
 
 router.route("/employees/SSN/:id")
-   .get(authenticatioMW.checkAdminOrEmployeeOrManager, controller.getEmployeeBySSN);
+   .get(authenticatioMW.checkAdminOrManagerEmployee, controller.getEmployeeBySSN);
 
 router.route("/employees/clinic/:id")
-   .get(authenticatioMW.checkAdminOrEmployee, controller.getEmployeesByClinicId);
+   .get(authenticatioMW.checkAdminOrManager, controller.getEmployeesByClinicId);
 
 router.route("/employees/image/:id?")
-   .patch(authenticatioMW.checkEmployeeID, uploadEmployee, controller.changeEmployeeImageById)
+   .patch(authenticatioMW.checkAdminOrEmployee, uploadEmployee, controller.changeEmployeeImageById)
 
 
 module.exports = router;

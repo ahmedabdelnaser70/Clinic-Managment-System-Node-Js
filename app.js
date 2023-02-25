@@ -14,6 +14,7 @@ const presciptionRouter = require("./Routes/prescriptionRoutes");
 const reportRouter = require("./Routes/reportRoute");
 const invoiceRouter = require("./Routes/invoiceRouter");
 const publicRouter = require("./Routes/publicRoutes");
+const userRouter = require("./Routes/userRouters");
 const morgan = require("morgan");
 
 require("dotenv").config();
@@ -58,6 +59,7 @@ app.use(loginRouter);
 app.use(authenticatioMW.authentication);
 
 //Second Middleware
+app.use(userRouter);
 app.use(clinicRouter);
 app.use(doctorRouter);
 app.use(patientRouter);

@@ -57,13 +57,20 @@ exports.getEmployeeBySSN = (request, response, next) => {
    EmployeeSchema.findOne({SSN: request.params.id}, sortAndFiltering.selectedFields)
    .populate({
       path: "clinic",
-      select: {location: 1, _id: 0}
+      select: {location: 1, manager: 1, _id: 0}
    })
    .then((data) => {
-      if (data) {
-         response.status(201).json(data);
-      } else {
-         next(new Error("Employee does not exist"));
+      if(data.clinic.manager == request.id || request.role == "admin") {
+         if (data) {
+            response.status(201).json(data);
+         } else {
+            next(new Error("Employee does not exist"));
+         }
+      }
+      else {
+         let error = new Error('Not allow for you to display the information of this employee');
+         error.status = 403;
+         next(error);
       }
    })
    .catch((error) => {
@@ -82,7 +89,7 @@ exports.getEmployeesByClinicId = (request, response, next) => {
       if (data.length > 0) {
          response.status(201).json(data);
       } else {
-         let error = new Error("Employee does not exist");
+         let error = new Error("No employees in this clinic");
          error.status = 403;
          next(error);
       }
@@ -181,16 +188,23 @@ exports.updateEmployeeByManager = (request, response, next) => {
 };
 
 exports.changeEmployeeImageById = (request, response, next) => {
-   EmployeeSchema.updateOne({id: request.params.id}, {
+   EmployeeSchema.findOneAndUpdate({id: request.params.id}, {
       $set: {
          image: request.file.path
       }
    }).then(function(result) {
-      if(result.modifiedCount == 0) {
-         response.status(200).json({Updated: true, Message: "Nothing is changed"});
+      if(result) {
+         if(result.modifiedCount == 0) {
+            response.status(200).json({Updated: true, Message: "Nothing is changed"});
+         }
+         else {
+            response.status(200).json({Updated: true, Message: "The image is updated successfully"});
+         }
       }
       else {
-         response.status(200).json({Updated: true, Message: "The image is updated successfully"});
+         let error = new Error("This employee is not found");
+         error.status = 404;
+         next(error);
       }
    })
 }
@@ -228,13 +242,20 @@ function updateEmployee(nameProperty, request, response, next) {
       }
    }
    if(employeeData != {}) {
-      EmployeeSchema.updateOne({_id: request.params.id}, {$set: employeeData})
+      EmployeeSchema.findOneAndUpdate({_id: request.params.id}, {$set: employeeData})
          .then((result) => {
-            if(result.modifiedCount == 0) {
-               response.status(200).json({Updated: true, Message: "Nothing is changed"});
+            if(result) {
+               if(result.modifiedCount == 0) {
+                  response.status(200).json({Updated: true, Message: "Nothing is changed"});
+               }
+               else {
+                  response.status(200).json({Updated: true, Message: "Employee is updated successfully"});
+               }
             }
             else {
-               response.status(200).json({Updated: true, Message: "Employee is updated successfully"});
+               let error = new Error("This Employee is not found");
+               error.status = 404;
+               next(error);
             }
          })
          .catch((error) => {

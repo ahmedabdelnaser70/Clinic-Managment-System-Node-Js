@@ -18,4 +18,5 @@ router.route("/clinics/:id?")
 router.route("/clinics/manager/:id?")
 	.all(authenticatioMW.checkAdmin)
 	.patch(...patchClinicValidation, validationError, controller.updateClinicManager)
+
 module.exports = router;

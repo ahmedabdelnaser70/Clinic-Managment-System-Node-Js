@@ -47,7 +47,7 @@ module.exports.checkAdminOrDoctor = ((request, response, next) => {
     }
 })
 
-//Used
+//Used in clinic
 module.exports.checkAdminOrManager = ((request, response, next) => {
     if(request.role == 'admin') {
         next()
@@ -71,54 +71,21 @@ module.exports.checkAdminOrManager = ((request, response, next) => {
     }
 })
 
-module.exports.checkEmployeeID = ((request, response, next) => {
-    if(request.role == 'admin') {
-        EmployeeSchema.findOne({_id: request.params.id}).then(function(result) {
-            if(result != null) {
-                next();
-            }
-            else {
-                let error = new Error('This doctor is not found');
-                error.status = 403;
-                next(error);
-            }
-        })
-    }
-    else if(request.role == 'employee' && request.id == request.params.id) {
-        next();
+//Used in employee
+module.exports.checkAdminOrManagerEmployee = ((request, response, next) => {
+    if(request.role == 'admin' || request.role == 'doctor') {
+        next()
     } 
     else {
-        let error = new Error('Not Authorized');
+        let error = new Error('Not allow for you to display the information of this employee');
         error.status = 403;
         next(error);
     }
 })
 
-module.exports.checkPatientID = ((request, response, next) => {
-    if(request.role == 'admin') {
-        PatientSchema.findOne({_id: request.params.id}).then(function(result) {
-            if(result != null) {
-                next();
-            }
-            else {
-                let error = new Error('This doctor is not found');
-                error.status = 403;
-                next(error);
-            }
-        })
-    }
-    else if(request.role == 'patient' && request.id == request.params.id) {
-        next();
-    } 
-    else {
-        let error = new Error('Not Authorized');
-        error.status = 403;
-        next(error);
-    }
-})
-
+//used
 module.exports.checkAdminOrEmployee = ((request, response, next) => {
-    if (request.role == 'admin' || request.role == 'employee') {
+    if (request.role == 'admin' || (request.role == 'employee' && request.id == request.params.id)) {
         next();
     } else {
         let error = new Error('Not Authorized');
@@ -137,8 +104,8 @@ module.exports.checkPatientOrEmployee = ((request, response, next) => {
     }
 })
 
-module.exports.checkAdminOrEmployeeOrManager = ((request, response, next) => {
-    if (request.role == 'admin' || request.role == 'employee' || request.role == 'doctor') {
+module.exports.checkAdminOrPatient = ((request, response, next) => {
+    if (request.role == 'admin' || (request.role == 'patient' && request.id == request.params.id)) {
         next();
     } else {
         let error = new Error('Not Authorized');
@@ -147,8 +114,8 @@ module.exports.checkAdminOrEmployeeOrManager = ((request, response, next) => {
     }
 })
 
-module.exports.checkAdminOrPatient = ((request, response, next) => {
-    if (request.role == 'admin' || request.role == 'patient') {
+module.exports.checkPatientOrDoctorOrEmployee = ((request, response, next) => {
+    if (request.role == 'doctor' || request.role == 'patient' || request.role == "employee") {
         next();
     } else {
         let error = new Error('Not Authorized');

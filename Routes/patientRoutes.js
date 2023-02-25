@@ -16,6 +16,6 @@ router.route("/patients/:id?")
    .delete(authenticatioMW.checkAdmin, controller.deletePatient);
 
 router.route("/patients/image/:id?")
-   .patch(authenticatioMW.checkPatientID, uploadPatient, controller.changePatientImageById)
+   .patch(authenticatioMW.checkAdminOrPatient, uploadPatient, controller.changePatientImageById)
 
 module.exports = router;
