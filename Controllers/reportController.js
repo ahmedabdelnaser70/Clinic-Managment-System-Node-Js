@@ -346,7 +346,7 @@ exports.getPatientInvoicesReportForaDay = (request, response, next) => {
 function createPdf(doc) {
 	for(let res of doc) {
 		try {
-		let clinicLogo = "./ogo/clinicLogo.png";
+		let clinicLogo = "./logo/clinicLogo.png";
 		let fileName = "./InvoicesPdf/invoice " + res._id + ".pdf";
 		let fontNormal = "Helvetica";
 		let fontBold = "Helvetica-Bold";
