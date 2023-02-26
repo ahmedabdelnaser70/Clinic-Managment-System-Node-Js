@@ -8,8 +8,8 @@ let fs = require("fs");
 exports.getInvoiceByID = async (request, response, next) => {
    invoiceSchema
       .findOne({ _id: request.params.id }, { __v: 0 })
-      .populate({ path: "patientId", select: { email: 0, password: 0, __v: 0 } })
-      .populate({ path: "clinicId", select: { email: 0, password: 0, __v: 0, doctors: 0 } })
+      .populate({ path: "patientId", select: { firstName: 1, lastName: 1, age: 1, address: 1}})
+      .populate({ path: "clinicId", select: {doctors: 0}})
       .populate({ path: "services.doctorId", select: { _id: 0, specialty: 1 } })
       .then((res) => {
          if (res) {
@@ -27,10 +27,19 @@ exports.addInvoice = async (request, response, next) => {
       patientId: request.body.patientId,
       services: request.body.services,
    });
-   await newInvoice
-      .save()
+   await newInvoice.save()
       .then((result) => {
-         response.status(200).json(result);
+         invoiceSchema.findOne({_id: result._id})
+         .populate({ path: "patientId", select: { firstName: 1, lastName: 1, age: 1, address: 1} })
+         .populate({ path: "clinicId", select: { doctors: 0 } })
+         .populate({ path: "services.doctorId", select: { _id: 0, specialty: 1 } })
+         .then((res) => {
+            if (res) {
+               createPdf(res);
+               response.status(200).json(res);
+            } else next(new Error("invoices doesn't exist"));
+         })
+         .catch((error) => next(error));
       })
       .catch((error) => next(error));
 };
@@ -78,14 +87,13 @@ exports.deleteInvoice = (request, response, next) => {
 
 function createPdf(res) {
    try {
-      let clinicLogo = "./images/clinicLogo.png";
+      let clinicLogo = "./logo/clinicLogo.png";
       let fileName = "./InvoicesPdf/invoice" + res._id + ".pdf";
       let fontNormal = "Helvetica";
       let fontBold = "Helvetica-Bold";
       let total = 0;
       let services = [];
       for (let i = 0; i < res.services.length; i++) {
-         // console.log(res.services[i])
          services.push({
             id: res._id,
             name: res.services[i].doctorId.specialty,
@@ -96,9 +104,8 @@ function createPdf(res) {
          });
          total += 1 * res.services[i].price;
       }
-
       let sellerInfo = {
-         companyName: "iti clinic",
+         companyName: "ITI clinic",
          city: res.clinicId.location.city,
          street: res.clinicId.location.street,
          country: "Egypt",
@@ -119,7 +126,7 @@ function createPdf(res) {
          clinicId: res.clinicId._id,
          patientId: res.patientId._id,
          invoiceDate: res.date,
-         invoiceTime: "10:57:00 PM",
+         invoiceTime: new Date().toLocaleTimeString(),
          products: services,
          totalValue: total,
       };

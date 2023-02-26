@@ -13,7 +13,7 @@ const UserSchema = mongoose.model('users');
 
 exports.getAllEmployees = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
-   if(request.query.select.split(',').indexOf("clinic") == -1) {
+   if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
 		sortAndFiltering.selectedFields.clinic = 0;
 	}
    EmployeeSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
@@ -36,7 +36,7 @@ exports.getAllEmployees = (request, response, next) => {
 
 exports.getEmployeeByID = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
-   if(request.query.select.split(',').indexOf("clinic") == -1) {
+   if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
 		sortAndFiltering.selectedFields.clinic = 0;
 	}
    EmployeeSchema.findOne({_id: request.params.id}, sortAndFiltering.selectedFields)
@@ -60,7 +60,7 @@ exports.getEmployeeByID = (request, response, next) => {
 
 exports.getEmployeeBySSN = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
-   if(request.query.select.split(',').indexOf("clinic") == -1) {
+   if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
 		sortAndFiltering.selectedFields.clinic = 0;
 	}
    EmployeeSchema.findOne({SSN: request.params.id}, sortAndFiltering.selectedFields)
@@ -89,7 +89,7 @@ exports.getEmployeeBySSN = (request, response, next) => {
 
 exports.getEmployeesByClinicId = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
-   if(request.query.select.split(',').indexOf("clinic") == -1) {
+   if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
 		sortAndFiltering.selectedFields.clinic = 0;
 	}
    EmployeeSchema.find({clinic: request.params.id}, sortAndFiltering.selectedFields)

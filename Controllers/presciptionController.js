@@ -1,29 +1,26 @@
 const mongoose = require("mongoose");
+const helper = require("../helper/helperFunctions");
 require("./../Models/prescriptionModel");
 const PresciptionsSchema = mongoose.model("presciptions");
 require("./../Models/clinicModel");
 const ClinicSchema = mongoose.model("clinics");
-require("./../Models/doctorModel");
-const DoctorSchema = mongoose.model("doctors");
 require("./../Models/patientModel");
 const PatientSchema = mongoose.model("patients");
 require("./../Models/MedicineModel");
 const MedicineSchema = mongoose.model("medicines");
 
 exports.getAllPresciptions = function (request, response, next) {
-   let reqQuery = { ...request.query };
-   let querystr = JSON.stringify(reqQuery);
-   querystr = querystr.replace(/\b(gt|gte|lt|lte|in)\b/g, (match) => `$${match}`);
-   let query = PresciptionsSchema.find(JSON.parse(querystr), { __v: 0 });
-   if (request.query.select) {
-      let selectFields = request.query.select.split(",").join(" ");
-      query = query.select(selectFields);
-   }
-   if (request.query.sort) {
-      let sortFields = request.query.sort.split(",").join(" ");
-      query = query.sort(sortFields);
-   }
-   query
+   let sortAndFiltering = helper.sortAndFiltering(request);
+   if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
+		sortAndFiltering.selectedFields.clinic = 0;
+	}
+   if(request.query.select && request.query.select.split(',').indexOf("doctor") == -1) {
+		sortAndFiltering.selectedFields.doctor = 0;
+	}
+   if(request.query.select && request.query.select.split(',').indexOf("patient") == -1) {
+		sortAndFiltering.selectedFields.patient = 0;
+	}
+   PresciptionsSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
       .populate([
          {
             path: "clinic",
@@ -42,6 +39,7 @@ exports.getAllPresciptions = function (request, response, next) {
             select: { name: 1, _id: 0 },
          },
       ])
+      .sort(sortAndFiltering.sortedFields)
       .then(function (data) {
          response.status(200).json(data);
       })
@@ -51,11 +49,21 @@ exports.getAllPresciptions = function (request, response, next) {
 };
 
 exports.getPresciptionById = function (request, response, next) {
+   let sortAndFiltering = helper.sortAndFiltering(request);
+   if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
+		sortAndFiltering.selectedFields.clinic = 0;
+	}
+   if(request.query.select && request.query.select.split(',').indexOf("doctor") == -1) {
+		sortAndFiltering.selectedFields.doctor = 0;
+	}
+   if(request.query.select && request.query.select.split(',').indexOf("patient") == -1) {
+		sortAndFiltering.selectedFields.patient = 0;
+	}
    PresciptionsSchema.findOne(
       {
          _id: request.params.id,
       },
-      { __v: 0 }
+      sortAndFiltering.selectedFields
    )
       .populate([
          {
@@ -95,7 +103,17 @@ exports.getPresciptionById = function (request, response, next) {
 };
 
 exports.getPresciptionsByClinicId = function (request, response, next) {
-   PresciptionsSchema.find({ clinic: request.params.id }, { clinic: 1, __v: 0 })
+   let sortAndFiltering = helper.sortAndFiltering(request);
+   if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
+		sortAndFiltering.selectedFields.clinic = 0;
+	}
+   if(request.query.select && request.query.select.split(',').indexOf("doctor") == -1) {
+		sortAndFiltering.selectedFields.doctor = 0;
+	}
+   if(request.query.select && request.query.select.split(',').indexOf("patient") == -1) {
+		sortAndFiltering.selectedFields.patient = 0;
+	}
+   PresciptionsSchema.find({ clinic: request.params.id }, sortAndFiltering.selectedFields)
       .populate([
          {
             path: "doctor",
@@ -114,8 +132,9 @@ exports.getPresciptionsByClinicId = function (request, response, next) {
             select: { name: 1, _id: 0 },
          },
       ])
+      .sort(sortAndFiltering.sortedFields)
       .then(function (result) {
-         if(request.id == result.clinic.manager || request.role == 'admin') {
+         if(request.role == 'admin' || request.id == result.clinic.manager) {
             if (result) {
                response.status(200).json(result);
             } else {
@@ -134,7 +153,17 @@ exports.getPresciptionsByClinicId = function (request, response, next) {
 };
 
 exports.getPresciptionsByDoctorId = function (request, response, next) {
-   PresciptionsSchema.find({ doctor: request.params.id }, { doctor: 1, __v: 0 })
+   let sortAndFiltering = helper.sortAndFiltering(request);
+   if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
+		sortAndFiltering.selectedFields.clinic = 0;
+	}
+   if(request.query.select && request.query.select.split(',').indexOf("doctor") == -1) {
+		sortAndFiltering.selectedFields.doctor = 0;
+	}
+   if(request.query.select && request.query.select.split(',').indexOf("patient") == -1) {
+		sortAndFiltering.selectedFields.patient = 0;
+	}
+   PresciptionsSchema.find({ doctor: request.params.id }, sortAndFiltering.selectedFields)
       .populate([
          {
             path: "clinic",
@@ -153,18 +182,12 @@ exports.getPresciptionsByDoctorId = function (request, response, next) {
             select: { name: 1, _id: 0 },
          },
       ])
+      .sort(sortAndFiltering.sortedFields)
       .then(function (result) {
-         if(request.id == result.doctor._id || request.role == 'admin') {
-            if (result) {
-               response.status(200).json(result);
-            } else {
-               next(new Error("This presciption is not found"));
-            }
-         }
-         else {
-            let error = new Error('Not allow for you to show the information of this prescription')
-            error.status = 403
-            next(error);
+         if (result) {
+            response.status(200).json(result);
+         } else {
+            next(new Error("This presciption is not found"));
          }
       })
       .catch(function (error) {
@@ -173,7 +196,20 @@ exports.getPresciptionsByDoctorId = function (request, response, next) {
 };
 
 exports.getPresciptionsByPatientId = function (request, response, next) {
-   PresciptionsSchema.find({ patient: request.params.id }, { patient: 1, __v: 0 })
+   let sortAndFiltering = helper.sortAndFiltering(request);
+   if(request.query.select.split(',').indexOf("clinic") == -1) {
+		sortAndFiltering.selectedFields.clinic = 0;
+	}
+   if(request.query.select.split(',').indexOf("doctor") == -1) {
+		sortAndFiltering.selectedFields.doctor = 0;
+	}
+   if(request.query.select.split(',').indexOf("patient") == -1) {
+		sortAndFiltering.selectedFields.patient = 0;
+	}
+   if(request.query.select.split(',').indexOf("medicine") == -1) {
+		sortAndFiltering.selectedFields.medicine = 0;
+	}
+   PresciptionsSchema.find({ patient: request.params.id }, sortAndFiltering.selectedFields)
       .populate([
          {
             path: "clinic",
@@ -192,18 +228,12 @@ exports.getPresciptionsByPatientId = function (request, response, next) {
             select: { name: 1, _id: 0 },
          },
       ])
+      .sort(sortAndFiltering.sortedFields)
       .then(function (result) {
-         if(request.id == result.patient._id || request.role == 'admin') {
-            if (result) {
-               response.status(200).json(result);
-            } else {
-               next(new Error("This presciption is not found"));
-            }
-         }
-         else {
-            let error = new Error('Not allow for you to show the information of this prescription')
-            error.status = 403
-            next(error);
+         if (result) {
+            response.status(200).json(result);
+         } else {
+            next(new Error("This presciption is not found"));
          }
       })
       .catch(function (error) {
@@ -223,34 +253,28 @@ exports.addPresciption = function (request, response, next) {
             if (result.length == uniqueMedicines.length) {
                ClinicSchema.findOne({ _id: request.body.clinic }).then(function (clinicData) {
                   if (clinicData != null) {
-                     DoctorSchema.findOne({ _id: request.body.doctor }).then(function (doctorData) {
-                        if (doctorData != null) {
-                           let presciptionDate = new Date();
-                           PatientSchema.findOne({ _id: request.body.doctor }).then(function (patientData) {
-                              if (patientData != null) {
-                                 let newPresciption = new PresciptionsSchema({
-                                    clinic: request.body.clinic,
-                                    doctor: request.id,
-                                    patient: request.body.patient,
-                                    medicine: request.body.medicine,
-                                    notes: request.body.notes,
-                                    date: presciptionDate.toLocaleDateString(),
-                                    time: presciptionDate.toLocaleTimeString(),
-                                 });
-                                 newPresciption
-                                    .save()
-                                    .then(function (result) {
-                                       response.status(201).json(result);
-                                    })
-                                    .catch(function (error) {
-                                       next(error);
-                                    });
-                              } else {
-                                 next(new Error("You try to add patient not found"));
-                              }
+                     let presciptionDate = new Date();
+                     console.log(request.body.patient)
+                     PatientSchema.findOne({ _id: request.body.patient}).then(function (patientData) {
+                        if (patientData != null) {
+                           let newPresciption = new PresciptionsSchema({
+                              clinic: request.body.clinic,
+                              doctor: request.id,
+                              patient: request.body.patient,
+                              medicine: request.body.medicine,
+                              notes: request.body.notes,
+                              date: presciptionDate.toLocaleDateString(),
+                              time: presciptionDate.toLocaleTimeString(),
                            });
+                           newPresciption.save()
+                              .then(function (result) {
+                                 response.status(201).json(result);
+                              })
+                              .catch(function (error) {
+                                 next(error);
+                              });
                         } else {
-                           next(new Error("You try to add doctor not found"));
+                           next(new Error("You try to add patient not found"));
                         }
                      });
                   } else {
@@ -267,33 +291,27 @@ exports.addPresciption = function (request, response, next) {
    } else {
       ClinicSchema.findOne({ _id: request.body.clinic }).then(function (clinicData) {
          if (clinicData != null) {
-            DoctorSchema.findOne({ _id: request.body.doctor }).then(function (doctorData) {
-               if (doctorData != null) {
-                  PatientSchema.findOne({ _id: request.body.doctor }).then(function (patientData) {
-                     if (patientData != null) {
-                        let presciptionDate = new Date();
-                        let newPresciption = new PresciptionsSchema({
-                           clinic: request.body.clinic,
-                           doctor: request.id,
-                           patient: request.body.patient,
-                           notes: request.body.notes,
-                           date: presciptionDate.toLocaleDateString(),
-                           time: presciptionDate.toLocaleTimeString(),
-                        });
-                        newPresciption
-                           .save()
-                           .then(function (result) {
-                              response.status(201).json(result);
-                           })
-                           .catch(function (error) {
-                              next(error);
-                           });
-                     } else {
-                        next(new Error("You try to add patient not found"));
-                     }
+            PatientSchema.findOne({ _id: request.body.patient}).then(function (patientData) {
+               if (patientData != null) {
+                  let presciptionDate = new Date();
+                  let newPresciption = new PresciptionsSchema({
+                     clinic: request.body.clinic,
+                     doctor: request.id,
+                     patient: request.body.patient,
+                     notes: request.body.notes,
+                     date: presciptionDate.toLocaleDateString(),
+                     time: presciptionDate.toLocaleTimeString(),
                   });
+                  newPresciption
+                     .save()
+                     .then(function (result) {
+                        response.status(201).json(result);
+                     })
+                     .catch(function (error) {
+                        next(error);
+                     });
                } else {
-                  next(new Error("You try to add doctor not found"));
+                  next(new Error("You try to add patient not found"));
                }
             });
          } else {
@@ -306,7 +324,7 @@ exports.addPresciption = function (request, response, next) {
 exports.updatePresciption = function (request, response, next) {
    PresciptionsSchema.findOne({ _id: request.params.id })
       .then(function (data) {
-         if(request.id == data.doctor || request.role == 'admin') {
+         if(request.id == data.doctor) {
             if (request.body.medicine != undefined) {
                let oldMedicine = [];
                data.medicine.forEach(function (medId) {
@@ -422,7 +440,7 @@ exports.updatePresciption = function (request, response, next) {
 
 exports.deletePresciption = function (request, response, next) {
    PresciptionsSchema.findOne({_id: request.params.id}, {doctor: 1, _id: 0}).then(function(data) {
-      if(data != null && (request.id == data.doctor || request.role == 'admin')) {
+      if(data != null && (request.id == data.doctor)) {
          PresciptionsSchema.deleteOne({
             _id: request.params.id,
          })
@@ -440,10 +458,13 @@ exports.deletePresciption = function (request, response, next) {
       else {
          if(data == null) {
             let error = new Error("This Prescription is not found");
+            error.status = 404;
          }
          else {
             let error = new Error("Not allow for you to delete this prescription")
+            error.status = 401;
          }
+         next(error)
       }
    })
 };

@@ -7,10 +7,10 @@ const authenticatioMW = require("../Middlewares/authentication")
 
 router.route("/presciption")
 	.get(authenticatioMW.checkAdmin, controller.getAllPresciptions)
-	.post(authenticatioMW.checkAdminOrDoctor, ...PrescriptionValidation, validationError, controller.addPresciption)
+	.post(authenticatioMW.checkAdminOrDoctorForPrescription, ...PrescriptionValidation, validationError, controller.addPresciption)
 
 router.route("/presciption/:id?")
-	.all(authenticatioMW.checkAdminOrDoctor)
+	.all(authenticatioMW.checkAdminOrDoctorForPrescription)
 	.get(controller.getPresciptionById)
 	.patch(...PrescriptionValidation, validationError, controller.updatePresciption)
 	.delete(controller.deletePresciption)

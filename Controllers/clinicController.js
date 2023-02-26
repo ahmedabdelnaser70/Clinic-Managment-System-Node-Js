@@ -9,10 +9,10 @@ const EmployeeSchema = mongoose.model("employees");
 
 exports.getAllClinic = function(request, response, next) {
 	let sortAndFiltering = helper.sortAndFiltering(request);
-	if(request.query.select.split(',').indexOf("doctors") == -1) {
+	if(request.query.select && request.query.select.split(',').indexOf("doctors") == -1) {
 		sortAndFiltering.selectedFields.doctors = 0;
 	}
-	if(request.query.select.split(',').indexOf("manager") == -1) {
+	if(request.query.select && request.query.select.split(',').indexOf("manager") == -1) {
 		sortAndFiltering.selectedFields.manager = 0;
 	}
 	ClinicSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
@@ -42,10 +42,10 @@ exports.getAllClinic = function(request, response, next) {
 
 exports.getClinicById = function(request, response, next) {
 	let sortAndFiltering = helper.sortAndFiltering(request);
-	if(request.query.select.split(',').indexOf("doctors") == -1) {
+	if(request.query.select && request.query.select.split(',').indexOf("doctors") == -1) {
 		sortAndFiltering.selectedFields.doctors = 0;
 	}
-	if(request.query.select.split(',').indexOf("manager") == -1) {
+	if(request.query.select && request.query.select.split(',').indexOf("manager") == -1) {
 		sortAndFiltering.selectedFields.manager = 0;
 	}
 	ClinicSchema.findOne({_id: request.params.id}, sortAndFiltering.selectedFields)

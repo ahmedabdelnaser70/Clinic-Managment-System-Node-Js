@@ -15,7 +15,7 @@ const UserSchema = mongoose.model('users');
 
 exports.getAllDoctors = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
-   if(request.query.select.split(',').indexOf("clinic") == -1) {
+   if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
 		sortAndFiltering.selectedFields.clinic = 0;
 	}
    DoctorSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
@@ -40,7 +40,7 @@ exports.getAllDoctors = (request, response, next) => {
 
 exports.getDoctorById = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
-   if(request.query.select.split(',').indexOf("clinic") == -1) {
+   if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
 		sortAndFiltering.selectedFields.clinic = 0;
 	}
    DoctorSchema.findOne({_id: request.params.id}, sortAndFiltering.selectedFields)

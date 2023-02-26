@@ -2,7 +2,6 @@ const {body} = require("express-validator");
 
 exports.PrescriptionValidation = [
 	body("clinic").isInt().withMessage("The clinic must be Integar"),
-	body("doctor").isInt().withMessage("The doctor must be Integar"),
 	body("patient").isInt().withMessage("The patient must be Integar"),
 	body("medicine").optional().isArray().withMessage("The medicine must be array of objects"),
 	body("medicine.*").isObject().withMessage("Any medicine must be object"),

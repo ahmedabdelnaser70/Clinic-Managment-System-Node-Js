@@ -346,7 +346,7 @@ exports.getPatientInvoicesReportForaDay = (request, response, next) => {
 function createPdf(doc) {
 	for(let res of doc) {
 		try {
-		let clinicLogo = "./images/clinicLogo.png";
+		let clinicLogo = "./ogo/clinicLogo.png";
 		let fileName = "./InvoicesPdf/invoice " + res._id + ".pdf";
 		let fontNormal = "Helvetica";
 		let fontBold = "Helvetica-Bold";
@@ -363,7 +363,7 @@ function createPdf(doc) {
 			total += 1 * res.services[i].price;
 		}
 		let sellerInfo = {
-			companyName: "iti clinic",
+			companyName: "ITI clinic",
 			city: res.clinicId.location.city,
 			street: res.clinicId.location.street,
 			country: "Egypt",
@@ -383,7 +383,7 @@ function createPdf(doc) {
 			clinicId: res.clinicId._id,
 			patientId: res.patientId._id,
 			invoiceDate: res.date,
-			invoiceTime: "10:57:00 PM",
+			invoiceTime: new Date().toLocaleTimeString(),
 			products: services,
 			totalValue: total,
 		};
