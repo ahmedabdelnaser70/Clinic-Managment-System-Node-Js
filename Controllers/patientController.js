@@ -109,11 +109,11 @@ exports.deletePatient = (request, response, next) => {
       PatientSchema.findOneAndDelete({_id: request.params.id})
       .then(result => {
          if(result != null) {            
-            fs.unlink("uploads\\images\\patients\\" + request.params.id + ".png", function (result) {
+            fs.unlink("uploads/images/patients/" + request.params.id + ".png", function (result) {
                if (result) {
                   response.status(200).json({Deleted: false, Message: "This image is not found"});
                } else {
-                  console.log("File removed:", "uploads\\images\\patients\\" + request.params.id + ".png");
+                  console.log("File removed:", "uploads/images/patients/" + request.params.id + ".png");
                   response.status(200).json({Deleted: true});
                }
             });

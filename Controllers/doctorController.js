@@ -15,6 +15,9 @@ const UserSchema = mongoose.model('users');
 
 exports.getAllDoctors = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
+   if(request.query.select.split(',').indexOf("clinic") == -1) {
+		sortAndFiltering.selectedFields.clinic = 0;
+	}
    DoctorSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
    .populate({
       path: "clinic",
@@ -37,6 +40,9 @@ exports.getAllDoctors = (request, response, next) => {
 
 exports.getDoctorById = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
+   if(request.query.select.split(',').indexOf("clinic") == -1) {
+		sortAndFiltering.selectedFields.clinic = 0;
+	}
    DoctorSchema.findOne({_id: request.params.id}, sortAndFiltering.selectedFields)
    .populate({
       path: "clinic",
@@ -84,7 +90,7 @@ exports.addDoctor = (request, response, next) => {
                               phone: request.body.phone,
                               clinic: bodyClinic,
                               specialty: request.body.specialty,
-                              image: "uploads\\images\\doctors\\doctor.png"
+                              image: "uploads/images/doctors/doctor.png"
                         });
                         newDoctor.save().then((result) => {
                               ClinicSchema.updateMany({ _id: {$in: request.body.clinic}}, {$push: {doctors: result._id}})
@@ -154,12 +160,12 @@ exports.deleteDoctorById = (request, response, next) => {
                   }, {
                      $pull: { doctors: parseInt(request.params.id) }
                   }).then(function(){
-                     fs.unlink("uploads\\images\\doctors\\" + request.params.id + ".png", function (result) {
+                     fs.unlink("uploads/images/doctors/" + request.params.id + ".png", function (result) {
                         if (result) {
                            console.log("This image is not found");
                            response.status(200).json({Deleted: false});
                         } else {
-                           console.log("File removed:", "uploads\\images\\doctors\\" + request.params.id + ".png");
+                           console.log("File removed:", "uploads/images/doctors/" + request.params.id + ".png");
                            response.status(200).json({Deleted: true});
                         }
                      });

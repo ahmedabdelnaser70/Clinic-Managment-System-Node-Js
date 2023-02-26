@@ -13,6 +13,9 @@ const UserSchema = mongoose.model('users');
 
 exports.getAllEmployees = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
+   if(request.query.select.split(',').indexOf("clinic") == -1) {
+		sortAndFiltering.selectedFields.clinic = 0;
+	}
    EmployeeSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
    .populate({
       path: "clinic",
@@ -33,6 +36,9 @@ exports.getAllEmployees = (request, response, next) => {
 
 exports.getEmployeeByID = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
+   if(request.query.select.split(',').indexOf("clinic") == -1) {
+		sortAndFiltering.selectedFields.clinic = 0;
+	}
    EmployeeSchema.findOne({_id: request.params.id}, sortAndFiltering.selectedFields)
    .populate({
       path: "clinic",
@@ -54,13 +60,16 @@ exports.getEmployeeByID = (request, response, next) => {
 
 exports.getEmployeeBySSN = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
+   if(request.query.select.split(',').indexOf("clinic") == -1) {
+		sortAndFiltering.selectedFields.clinic = 0;
+	}
    EmployeeSchema.findOne({SSN: request.params.id}, sortAndFiltering.selectedFields)
    .populate({
       path: "clinic",
       select: {location: 1, manager: 1, _id: 0}
    })
    .then((data) => {
-      if(data.clinic.manager == request.id || request.role == "admin") {
+      if(request.role == "admin" || data.clinic.manager == request.id) {
          if (data) {
             response.status(201).json(data);
          } else {
@@ -80,6 +89,9 @@ exports.getEmployeeBySSN = (request, response, next) => {
 
 exports.getEmployeesByClinicId = (request, response, next) => {
    let sortAndFiltering = helper.sortAndFiltering(request);
+   if(request.query.select.split(',').indexOf("clinic") == -1) {
+		sortAndFiltering.selectedFields.clinic = 0;
+	}
    EmployeeSchema.find({clinic: request.params.id}, sortAndFiltering.selectedFields)
    .populate({
       path: "clinic",
@@ -117,7 +129,7 @@ exports.addEmployee = (request, response, next) => {
                   salary: request.body.salary,
                   phone: request.body.phone,
                   clinic: request.body.clinic,
-                  image: "uploads\\images\\employees\\employee.png"
+                  image: "uploads/images/employees/employee.png"
                });
                newEmployee.save()
                   .then((result) => {
@@ -214,11 +226,11 @@ exports.deleteEmployee = (request, response, next) => {
       EmployeeSchema.findOneAndDelete({_id: request.params.id})
       .then(result => {
          if(result != null) {            
-            fs.unlink("uploads\\images\\doctors\\" + request.params.id + ".png", function (result) {
+            fs.unlink("uploads/images/doctors/" + request.params.id + ".png", function (result) {
                if (result) {
                   response.status(200).json({Deleted: false, Message: "This image is not found"});
                } else {
-                  console.log("File removed:", "uploads\\images\\doctors\\" + request.params.id + ".png");
+                  console.log("File removed:", "uploads/images/doctors/" + request.params.id + ".png");
                   response.status(200).json({Deleted: true});
                }
             });
