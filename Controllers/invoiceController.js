@@ -2,11 +2,15 @@ const mongoose = require("mongoose");
 require("../Models/invoiceModel");
 const invoiceSchema = mongoose.model("invoices");
 let easyinvoice = require("easyinvoice");
+const pdfKit = require("pdfkit");
 let fs = require("fs");
 
-exports.getInvoiceByID = (request, response, next) => {
+exports.getInvoiceByID = async (request, response, next) => {
    invoiceSchema
       .findOne({ _id: request.params.id }, { __v: 0 })
+      .populate({ path: "patientId", select: { email: 0, password: 0, __v: 0 } })
+      .populate({ path: "clinicId", select: { email: 0, password: 0, __v: 0, doctors: 0 } })
+      .populate({ path: "services.doctorId", select: { _id: 0, specialty: 1 } })
       .then((res) => {
          if (res) {
             createPdf(res);
@@ -17,36 +21,11 @@ exports.getInvoiceByID = (request, response, next) => {
 };
 
 exports.addInvoice = async (request, response, next) => {
-   let data = {
-      client: { company: "Client Corp", address: "Clientstreet 456", zip: "4567 CD", city: "Clientcity", country: "Clientcountry" },
-      sender: { company: "Sample Corp", address: "Sample Street 123", zip: "1234 AB", city: "Sampletown", country: "Samplecountry" },
-      images: { logo: "https://public.easyinvoice.cloud/img/logo_en_original.png" },
-      information: {
-         number: request.body.clinicId,
-         "due-date": request.body.patientId,
-         date: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "numeric", year: "numeric" }),
-      },
-      products: [
-         { quantity: "2", description: "Medicine1", "tax-rate": 6, price: 33.87 },
-         { quantity: "4", description: "Medicine2", "tax-rate": 21, price: 10.45 },
-      ],
-      bottomNotice: "Kindly pay your invoice within 15 days.",
-      settings: { currency: "USD" },
-      translate: {},
-      customize: {},
-   };
-
-   await easyinvoice.createInvoice(data, function (result) {
-      fs.writeFileSync("./InvoicesPdf/invoice" + data.information.number + ".pdf", result.pdf, "base64");
-   });
-
    let newInvoice = new invoiceSchema({
       _id: request.params.id,
       clinicId: request.body.clinicId,
       patientId: request.body.patientId,
-      medicine: request.body.medicine,
-      quantity: request.body.quantity,
-      total: request.body.total,
+      services: request.body.services,
    });
    await newInvoice
       .save()
@@ -66,9 +45,7 @@ exports.updateInvoice = (request, response, next) => {
                   $set: {
                      clinicId: request.body.clinicId,
                      patientId: request.body.patientId,
-                     medicine: request.body.medicine,
-                     quantity: request.body.quantity,
-                     total: request.body.total,
+                     services: request.body.services,
                   },
                }
             )
@@ -102,46 +79,49 @@ exports.deleteInvoice = (request, response, next) => {
 function createPdf(res) {
    try {
       let clinicLogo = "./images/clinicLogo.png";
-      let fileName = "./InvoicesPdf/invoice" + res.patientId + ".pdf";
+      let fileName = "./InvoicesPdf/invoice" + res._id + ".pdf";
       let fontNormal = "Helvetica";
       let fontBold = "Helvetica-Bold";
+      let total = 0;
+      let services = [];
+      for (let i = 0; i < res.services.length; i++) {
+         // console.log(res.services[i])
+         services.push({
+            id: res._id,
+            name: res.services[i].doctorId.specialty,
+            company: "Acer",
+            unitPrice: res.services[i].price,
+            totalPrice: res.services[i].price,
+            qty: 1,
+         });
+         total += 1 * res.services[i].price;
+      }
 
       let sellerInfo = {
-         companyName: "ITI clinic",
-         address: "Mansoura",
-         city: "Mansoura",
-         pincode: "400017",
+         companyName: "iti clinic",
+         city: res.clinicId.location.city,
+         street: res.clinicId.location.street,
          country: "Egypt",
-         contactNo: "01065183989",
+         contactNo: res.clinicId.mobilePhone,
       };
 
       let customerInfo = {
-         customerName: "Walid ABC",
-         address: "Assiut",
-         city: "Assiut",
-         pincode: "400054",
+         customerName: res.patientId.firstName + " " + res.patientId.lastName,
+         city: res.patientId.address.city,
+         street: res.patientId.address.street,
          country: "Egypt",
-         contactNo: "01065183989",
+         contactNo: res.patientId.phone,
       };
 
       let orderInfo = {
          orderNo: res._id,
          invoiceNo: res._id,
-         clinicId: res.clinicId,
-         patientId: res.patientId,
+         clinicId: res.clinicId._id,
+         patientId: res.patientId._id,
          invoiceDate: res.date,
          invoiceTime: "10:57:00 PM",
-         products: [
-            {
-               id: "15785",
-               name: res.medicine,
-               company: "Acer",
-               unitPrice: res.total,
-               totalPrice: res.quantity * res.total,
-               qty: res.quantity,
-            },
-         ],
-         totalValue: res.quantity,
+         products: services,
+         totalValue: total,
       };
 
       let pdfDoc = new pdfKit();
@@ -150,19 +130,19 @@ function createPdf(res) {
 
       pdfDoc.text("Clinic", 5, 5, { align: "center", width: 600 });
       pdfDoc.image(clinicLogo, 25, 20, { width: 50, height: 50 });
-      pdfDoc.font(fontBold).text("PARALLELCODES", 7, 75);
+      pdfDoc.font(fontBold).text("ITI CLINICS", 7, 75);
       pdfDoc.font(fontNormal).fontSize(14).text("Order Invoice/Bill Receipt", 400, 30, { width: 200 });
       pdfDoc.fontSize(10).text(res.date, 400, 46, { width: 200 });
 
-      pdfDoc.font(fontBold).text("Sold by:", 7, 100);
+      pdfDoc.font(fontBold).text("Clinic:", 7, 100);
       pdfDoc.font(fontNormal).text(sellerInfo.companyName, 7, 115, { width: 250 });
-      pdfDoc.text(sellerInfo.address, 7, 130, { width: 250 });
-      pdfDoc.text(sellerInfo.city + " " + sellerInfo.pincode, 7, 145, { width: 250 });
+      pdfDoc.text(sellerInfo.street, 7, 130, { width: 250 });
+      pdfDoc.text(sellerInfo.city, 7, 145, { width: 250 });
 
-      pdfDoc.font(fontBold).text("Customer details:", 400, 100);
+      pdfDoc.font(fontBold).text("Patient details:", 400, 100);
       pdfDoc.font(fontNormal).text(customerInfo.customerName, 400, 115, { width: 250 });
-      pdfDoc.text(customerInfo.address, 400, 130, { width: 250 });
-      pdfDoc.text(customerInfo.city + " " + customerInfo.pincode, 400, 145, { width: 250 });
+      pdfDoc.text(customerInfo.street, 400, 130, { width: 250 });
+      pdfDoc.text(customerInfo.city, 400, 145, { width: 250 });
 
       pdfDoc.text("Order No:" + orderInfo.orderNo, 7, 195, { width: 250 });
       pdfDoc.text("Invoice No:" + orderInfo.invoiceNo, 7, 210, { width: 250 });
@@ -196,7 +176,7 @@ function createPdf(res) {
       productNo++;
 
       pdfDoc.font(fontBold).text("Total:", 400, 256 + productNo * 17);
-      pdfDoc.font(fontBold).text(res.quantity * res.total, 500, 256 + productNo * 17);
+      pdfDoc.font(fontBold).text(total, 500, 256 + productNo * 17);
 
       pdfDoc.end();
       console.log("pdf generate successfully");

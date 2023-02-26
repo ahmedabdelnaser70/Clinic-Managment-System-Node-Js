@@ -242,7 +242,7 @@ exports.getClinicDailyInvoicesReport = (request, response, next) => {
 	.populate({ path: "services.doctorId", select: {_id: 0, specialty: 1}})
 	.then((data) => {
 		if(data.length != 0) {
-			if(request.id == clinicId.manager || request.role == "admin") {
+			if(request.id == data[0].clinicId.manager || request.role == "admin") {
 				createPdf(data)
 				response.status(200).json(data);
 			}

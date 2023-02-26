@@ -74,7 +74,7 @@ exports.getAllAppointments = (request, response, next) => {
 }
 
 exports.getappointmentsByClinicId = function (request, response, next) {
-    EmployeeSchema.find({ clinic: request.params.id }, {email: 0, password: 0}).then(function(date){
+    EmployeeSchema.find({ clinic: request.params.id}).then(function(date){
         if(date.length > 0) {
             let action = date.some(function(emp) {
                 return request.id == emp._id

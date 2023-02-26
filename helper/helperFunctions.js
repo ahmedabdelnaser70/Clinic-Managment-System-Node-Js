@@ -16,15 +16,6 @@ exports.sortAndFiltering = function(request) {
 		for(let field of reqQuery.select.split(',')) {
 			selectedFields[field.trim()] = 1;
 		}
-		// if(reqQuery.select.split(',').indexOf('clinic') == -1) {
-		// 	selectedFields["clinic"] = 0;
-		// }
-		if(reqQuery.select.split(',').indexOf('doctors') == -1) {
-			selectedFields["doctors"] = 0;
-		}
-		if(reqQuery.select.split(',').indexOf('manager') == -1) {
-			selectedFields["manager"] = 0;
-		}
 	}
 	if(reqQuery.sort) {
 		for(let field of reqQuery.sort.split(',')) {

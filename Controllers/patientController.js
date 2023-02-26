@@ -53,7 +53,7 @@ exports.addPatient = (request, response, next) => {
             age: request.body.age,
             address: request.body.address,
             phone: request.body.phone,
-            image: "uploads\\images\\patients\\patient.png"
+            image: "uploads/images/patients/patient.png"
          });
          newPatient.save()
             .then((result) => {
