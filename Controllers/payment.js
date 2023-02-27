@@ -1,11 +1,19 @@
 const mongoose = require("mongoose");
 require("../Models/invoiceModel");
 const invoiceSchema = mongoose.model("invoices");
+
 var Secret_Key = "sk_test_51MYaafJbL5zohfa0alEKFf75zLL7urT5MJHomVHjPdFPokPCaCzt4KOVpDe1jBMu4FoRrJqvPLko14nYF1jDFlBY00FtvGPQg2";
 var stripe = require("stripe")(Secret_Key);
 //var Publishable_Key = 'pk_test_51MYaafJbL5zohfa0zpuoN9xtDjTYWA9zNmeoHOtmaOh0TkzIv2s0GZBeHqHojxPfRZXJIsR8V3X2q2mkUialqiPQ00sDMsKKEF'
 
+require("./../Models/clinicModel");
+const clinicSchema = mongoose.model("clinics");
+require("./../Models/doctorModel");
+const doctorSchema = mongoose.model("doctors");
+require("./../Models/patientModel");
+const patientSchema = mongoose.model("patients");
 exports.paymentPost = async (request, response, next) => {
+   // create card
    const token = await stripe.tokens.create({
       card: {
          number: "4242424242424242",
@@ -15,33 +23,37 @@ exports.paymentPost = async (request, response, next) => {
       },
    });
 
+   const patient = await patientSchema.findOne({ _id: request.id });
+   const doctor = await doctorSchema.findOne({ _id: request.body.doctorId });
+   if (!patient) return next(new Error("patient not exist", 404));
+
+   // create customer
    stripe.customers
       .create({
-         email: "waleed@gmail.com",
+         amount: request.body.examPrice,
+         email: patient.email,
          source: token.id,
-         name: "Gourav Hammad",
+         name: patient.firstName + " " + patient.lastName,
          address: {
-            line1: "TC 9/4 Old MES colony",
             postal_code: "452331",
-            city: "Indore",
-            state: "Madhya Pradesh",
+            city: patient.address.city,
             country: "Egypt",
          },
       })
       .then((customer) => {
          return stripe.charges.create({
-            amount: 2500, // Charging Rs 25
-            description: "Web Development Product",
+            amount: request.body.examPrice,
+            description: `${doctor.specialty} doctor examination.`,
             currency: "USD",
             customer: customer.id,
          });
       })
       .then(async (charge) => {
-         // response.send("Success") // If no error occurs
+         // If no error occurs
          let newInvoice = new invoiceSchema({
-            clinicId: 5,
-            patientId: 800,
-            medicine: "medicine1",
+            clinicId: doctor.clinic,
+            patientId: patient._id,
+            services: [{ doctorId: doctor._id, price: charge.amount }],
             quantity: 2,
             total: charge.amount,
          });

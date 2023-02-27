@@ -11,7 +11,7 @@ const authenticatioMW = require('../Middlewares/authentication');
 
 
 
-router.route("/payment")
+router.route("/payment/:id")
 	.post(authenticatioMW.checkPatientOrEmployee, paymentPost);
 
 module.exports = router;
