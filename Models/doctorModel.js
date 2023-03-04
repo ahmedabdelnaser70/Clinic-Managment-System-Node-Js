@@ -6,6 +6,12 @@ const schema = mongoose.Schema({
     _id: {
         type: Number
     },
+    SSN: {
+        type: Number,
+        unique: true, 
+        required: true, 
+        match: [/[0-9]{14}/, "Invalid SSN"]
+    },
     firstName: {
         type: String,
         required: [true, 'Add the doctor\'s first name'],
@@ -23,17 +29,13 @@ const schema = mongoose.Schema({
         min: [25, 'doctor\'s age must be > 25'],
         max: [60, 'doctor\'s age must be < 60']
     },
-    specialty:{
-        type: String,
-        required: [true, 'doctor specialization is required']
-    },
     address: {
         type: addressSchema.addressSchema,
         required: true
     },
-    specialty: {
+    specialty:{
         type: String,
-        required: true
+        required: [true, 'doctor specialization is required']
     },
     image: {
         type: String

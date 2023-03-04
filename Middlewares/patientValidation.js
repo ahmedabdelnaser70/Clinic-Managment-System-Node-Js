@@ -1,6 +1,9 @@
 const {body} = require("express-validator");
 
 let patientPost = [
+   body("SSN")
+   .matches(/[0-9]{14}/)
+   .withMessage("SSN should 14 Number"),
    body("firstName")
       .isString()
       .withMessage("first Name should be string")
@@ -20,6 +23,10 @@ let patientPost = [
 ];
 
 let patientPatch = [
+   body("SSN")
+   .optional()
+   .matches(/[0-9]{14}/)
+   .withMessage("SSN should 14 Number"),
    body("firstName")
       .optional()
       .isString()

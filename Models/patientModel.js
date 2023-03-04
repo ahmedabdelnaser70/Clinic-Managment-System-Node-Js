@@ -6,6 +6,12 @@ const schema = new mongoose.Schema({
    _id: {
       type: Number
    },
+   SSN: {
+      type: Number,
+      unique: true, 
+      required: true, 
+      match: [/[0-9]{14}/, "Invalid SSN"]
+   },
    firstName: {
       type: String, 
       required: [true, "Add the patient first Name"] 

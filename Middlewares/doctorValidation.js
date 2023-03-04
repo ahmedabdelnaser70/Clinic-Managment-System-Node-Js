@@ -1,6 +1,9 @@
 const {body} = require("express-validator");
 
 exports.addDoctorValidation = [
+   body("SSN")
+   .matches(/[0-9]{14}/)
+   .withMessage("SSN should 14 Number"),
    body("firstName")
       .isAlpha()
       .withMessage("first name must be alpha")
@@ -31,6 +34,10 @@ exports.addDoctorValidation = [
 ];
 
 exports.patchDoctorValidation = [
+   body("SSN")
+   .optional()
+   .matches(/[0-9]{14}/)
+   .withMessage("SSN should 14 Number"),
    body("firstName")
       .optional()
       .isAlpha()
