@@ -30,7 +30,8 @@ exports.addDoctorValidation = [
    body("clinic").isArray().withMessage("The clinic must be array"),
    body("clinic").notEmpty().withMessage("The clinic must be not empty"),
    body("clinic.*").isInt().withMessage("Id of any clinic must be number"),
-   body("specialty").isString().withMessage("specialty must be a string"),
+   body("specialty").isInt().withMessage("specialty must be a Number"),
+   body("availability").isBoolean().withMessage("Availability should be boolean")
 ];
 
 exports.patchDoctorValidation = [
@@ -68,5 +69,7 @@ exports.patchDoctorValidation = [
    body("clinic").optional().isArray().withMessage("The clinic must be array"),
    body("clinic").optional().notEmpty().withMessage("The clinic must be not empty"),
    body("clinic.*").optional().isInt().withMessage("Id of any clinic must be number"),
-   body("specialty").optional().isString().withMessage("specialty must be a string"),
+   body("specialty").optional().isInt().withMessage("specialty must be a Number"),
+   body("availability").optional().isBoolean().withMessage("Availability should be boolean")
+
 ];

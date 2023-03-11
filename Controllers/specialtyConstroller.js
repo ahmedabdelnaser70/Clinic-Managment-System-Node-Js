@@ -73,7 +73,7 @@ exports.getSpecialtyById = function(request, response, next) {
 		}
 		else {
 			ResponseObject.Success = false;
-			ResponseObject.Message = 'No specialties are found';
+			ResponseObject.Message = 'This specialty is not found';
 		}
 		response.status(200).json(ResponseObject);
 	})

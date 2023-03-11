@@ -34,8 +34,9 @@ const schema = mongoose.Schema({
         required: true
     },
     specialty:{
-        type: String,
-        required: [true, 'doctor specialization is required']
+        type:  Number,
+        required: true,
+        ref: "specialties"
     },
     image: {
         type: String
@@ -49,7 +50,11 @@ const schema = mongoose.Schema({
         type: Array,
         required: true,
         ref: 'clinics'
-    }
+    },
+    availability: {
+		type: Boolean,
+		required: true
+	}
 })
 
 schema.plugin(AutoIncrement, {inc_field: '_id', start_seq: 1, id: 'Doctor_Id'});
