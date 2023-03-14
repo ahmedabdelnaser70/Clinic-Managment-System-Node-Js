@@ -167,38 +167,14 @@ exports.addClinic = function(request, response, next) {
 	}
 }
 
-exports.updateClinicById = function(request, response, next) {
+exports.updateClinicByManager = function(request, response, next) {
 	let nameProperty = ["location", "mobilePhone", "doctors"]
 	updateClinic(nameProperty, request, response, next);
 }
 
-exports.updateClinicManager = function(request, response, next) {
-	let ResponseObject = {
-		Success: true,
-	}
-	DoctorSchema.findOne({_id: request.body.manager}).then(function(data) {
-		if(data.length > 0) {
-			ClinicSchema.updateOne({_id: request.params.id}, {$set: {manager: request.body.manager}}).then(function(result) {
-				if(result.modifiedCount == 0) {
-					ResponseObject.Message = "Nothing is changed";
-				}
-				else {
-					ResponseObject.Message = "This clinic is updated succesfully";
-				}
-				response.status(201).json(ResponseObject);
-				
-			}).catch(function(error) {
-				next(error);
-			})
-		}
-		else {
-			ResponseObject.Success = false;
-			ResponseObject.Message = `You cannot add doctor doesn't found`;	
-			response.status(201).json(ResponseObject);	
-		}
-	}).catch(function(error) {
-		next(error);
-	})
+exports.updateClinicByAdmin = function(request, response, next) {
+	let nameProperty = ["location", "mobilePhone", "doctors", "manager", "availability"]
+	updateClinic(nameProperty, request, response, next);
 }
 
 exports.deleteClinic = function(request, response, next) {
@@ -275,15 +251,27 @@ function updateClinic(nameProperty, request, response, next) {
 										})
 									})
 								}
+							}
+							if(request.body.availability != undefined) {
+								DoctorSchema.updateMany({clinic: {$in: [request.params.id]}}, {$set: {availability: request.body.availability}})
+								.then(function() {
+									EmployeeSchema.updateMany({clinic: request.params.id}, {$set: {availability: request.body.availability}})
+									.then(function() {
+										response.status(201).json(ResponseObject);
+									})
+								})
+							}
+							else {
 								response.status(201).json(ResponseObject);
 							}
-							
 						}).catch(function(error) {
 							next(error);
 						})
 					}
 					else {
-						next(new Error(`You cannot add doctor doesn't found`))			
+						let error = new Error(`You cannot add doctor doesn't found`);
+						error.status = 201;
+						next(error)			
 					}
 				})
 			}
@@ -304,10 +292,22 @@ function updateClinic(nameProperty, request, response, next) {
 								}
 							).then(function(result) {
 								if(result.modifiedCount == 0) {
-									response.status(200).json({Updated: true, Message: "Nothing is changed"});
+									ResponseObject.Message = "Nothing is changed";
 								}
 								else {
-									response.status(200).json({Updated: true, Message: "This clinic is updated successfully"});
+									ResponseObject.Message =  "This clinic is updated successfully";
+								}
+								if(request.body.availability != undefined) {
+									DoctorSchema.updateMany({clinic: {$in: [request.params.id]}}, {$set: {availability: request.body.availability}})
+									.then(function() {
+										EmployeeSchema.updateMany({clinic: request.params.id}, {$set: {availability: request.body.availability}})
+										.then(function() {
+											response.status(201).json(ResponseObject);
+										})
+									})
+								}
+								else {
+									response.status(201).json(ResponseObject);
 								}
 							}).catch(function(error) {
 								next(error);
@@ -332,10 +332,22 @@ function updateClinic(nameProperty, request, response, next) {
 						}
 					).then(function(result) {
 						if(result.modifiedCount == 0) {
-							response.status(200).json({Updated: true, Message: "Nothing is changed"});
+							ResponseObject.Message = "Nothing is changed";
 						}
 						else {
-							response.status(200).json({Updated: true, Message: "This clinic is updated successfully"});
+							ResponseObject.Message = "This clinic is updated successfully";
+						}
+						if(request.body.availability != undefined) {
+							DoctorSchema.updateMany({clinic: {$in: [request.params.id]}}, {$set: {availability: request.body.availability}})
+							.then(function() {
+								EmployeeSchema.updateMany({clinic: request.params.id}, {$set: {availability: request.body.availability}})
+								.then(function() {
+									response.status(201).json(ResponseObject);
+								})
+							})
+						}
+						else {
+							response.status(201).json(ResponseObject);
 						}
 					}).catch(function(error) {
 						next(error);
@@ -344,9 +356,12 @@ function updateClinic(nameProperty, request, response, next) {
 			}
 		}
 		else {
-			next(new Error('This clinic not found'));
+			let error = new Error('This clinic not found');
+			error.status = 404;
+			next(error);
 		}
 	}).catch(function(error) {
 		next(error);
 	})
 }
+

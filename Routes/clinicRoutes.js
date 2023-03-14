@@ -12,11 +12,11 @@ router.route("/clinics")
 router.route("/clinics/:id?")
 	.all(authenticatioMW.checkAdminOrManager)
 	.get(controller.getClinicById)
-	.patch(...patchClinicValidation, validationError, controller.updateClinicById)
+	.patch(...patchClinicValidation, validationError, controller.updateClinicByManager)
 	.delete(authenticatioMW.checkAdmin, controller.deleteClinic)
 
-router.route("/clinics/manager/:id?")
+router.route("/clinics/admin/:id?")
 	.all(authenticatioMW.checkAdmin)
-	.patch(...patchClinicValidation, validationError, controller.updateClinicManager)
+	.patch(...patchClinicValidation, validationError, controller.updateClinicByAdmin)
 
 module.exports = router;
