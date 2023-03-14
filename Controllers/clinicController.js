@@ -27,14 +27,21 @@ exports.getAllClinic = function(request, response, next) {
 		}
 	]).sort(sortAndFiltering.sortedFields)
 	.then(function(result) {
-		if(result.length > 0) {
-			response.status(200).json(result);
+		let ResponseObject = {
+			Success: true,
+			Data: result,
+			// PageNo: request.length,
+			// ItemsNoPerPages: Number,
+			TotalPages: request.length
 		}
+		if (result.length > 0) {
+			ResponseObject.Message = 'Your request is success';
+		} 
 		else {
-			let error = new Error("Empty");
-			error.status = 403;
-			next(error);
+			ResponseObject.Success = false;
+			ResponseObject.Message = 'No clinics are found';
 		}
+		response.status(200).json(ResponseObject);
 	}).catch(function(error) {
 		next(error);
 	})
@@ -48,7 +55,7 @@ exports.getClinicById = function(request, response, next) {
 	if(request.query.select && request.query.select.split(',').indexOf("manager") == -1) {
 		sortAndFiltering.selectedFields.manager = 0;
 	}
-	ClinicSchema.findOne({_id: request.params.id}, sortAndFiltering.selectedFields)
+	ClinicSchema.find({_id: request.params.id}, sortAndFiltering.selectedFields)
 	.populate([
 		{
 			path: "doctors",
@@ -58,12 +65,22 @@ exports.getClinicById = function(request, response, next) {
 			path: "manager",
 			select: {firstName:1, lastName: 1, specialty: 1 }
 		}
-	]).then((data) => {
-		if (data) {
-			response.status(201).json(data);
-		} else {
-			next(new Error("This clinic does not exist"));
+	]).then((result) => {
+		let ResponseObject = {
+			Success: true,
+			Data: result,
+			// PageNo: request.length,
+			// ItemsNoPerPages: Number,
+			TotalPages: request.length
 		}
+		if (result.length > 0) {
+			ResponseObject.Message = 'Your request is success';
+		} 
+		else {
+			ResponseObject.Success = false;
+			ResponseObject.Message = 'This clinic is not found';
+		}
+		response.status(200).json(ResponseObject);
 	})
 	.catch((error) => {
 		next(error);
@@ -71,6 +88,12 @@ exports.getClinicById = function(request, response, next) {
 }
 
 exports.addClinic = function(request, response, next) {
+	let ResponseObject = {
+		Success: true,
+		Data: [],
+		Message: "The Doctor is added succesfully",
+		TotalPages: 1
+	}
 	if(request.body.doctors != undefined) {
 		let unique = Array.from(new Set([...request.body.doctors]))
 		if(request.body.manager != undefined) {
@@ -82,21 +105,25 @@ exports.addClinic = function(request, response, next) {
 					location: request.body.location,
 					mobilePhone: request.body.mobilePhone,
 					doctors: unique,
-					manager: request.body.manager
+					manager: request.body.manager,
+					availability: true
 				})
 				newClinic.save().then(function(result) {
 					DoctorSchema.updateMany({_id: {$in: unique}}, {$push: {clinic: result._id}}).then(function(res) {
-						response.status(201).json(result);
+						ResponseObject.Data = [result];
+                        ResponseObject.Message = "The clinic is added successfully";
 					}).catch(function(error) {
-						console.log(error);
+						next(error);
 					})
 				}).catch(function(error) {
 					next(error);
 				})
 			}
 			else {
-				next(new Error(`You cannot add doctor doesn't found`))			
+				ResponseObject.Success = false;
+				ResponseObject.Message = "One of the doctors that you try to add doesn't found";		
 			}
+			response.status(201).json(ResponseObject);
 		})
 	}
 	else {
@@ -106,27 +133,33 @@ exports.addClinic = function(request, response, next) {
 					let newClinic = new ClinicSchema({
 						location: request.body.location,
 						mobilePhone: request.body.mobilePhone,
-						manager: request.body.manager
+						manager: request.body.manager,
+						availability: true
 					})
 					newClinic.save().then(function(result) {
-						response.status(201).json(result);
+						ResponseObject.Data = [result];
+                        ResponseObject.Message = "The clinic is added successfully";
 					}).catch(function(error) {
 						next(error);
 					})
 				}
 				else {
-					next(new Error('This manager is not found'))
+					ResponseObject.Success = false;
+					ResponseObject.Message = "The manager that you try to add doesn't found";
 				}
+				response.status(201).json(ResponseObject);
 			})
 		}
 		else {
 			let newClinic = new ClinicSchema({
 				location: request.body.location,
 				mobilePhone: request.body.mobilePhone,
-	
+				availability: true
 			})
 			newClinic.save().then(function(result) {
-				response.status(201).json(result);
+				ResponseObject.Data = [result];
+                ResponseObject.Message = "The clinic is added successfully";
+				response.status(201).json(ResponseObject);
 			}).catch(function(error) {
 				next(error);
 			})
@@ -134,9 +167,67 @@ exports.addClinic = function(request, response, next) {
 	}
 }
 
-exports.updateClinic = function(request, response, next) {
+exports.updateClinicById = function(request, response, next) {
 	let nameProperty = ["location", "mobilePhone", "doctors"]
+	updateClinic(nameProperty, request, response, next);
+}
+
+exports.updateClinicManager = function(request, response, next) {
+	let ResponseObject = {
+		Success: true,
+	}
+	DoctorSchema.findOne({_id: request.body.manager}).then(function(data) {
+		if(data.length > 0) {
+			ClinicSchema.updateOne({_id: request.params.id}, {$set: {manager: request.body.manager}}).then(function(result) {
+				if(result.modifiedCount == 0) {
+					ResponseObject.Message = "Nothing is changed";
+				}
+				else {
+					ResponseObject.Message = "This clinic is updated succesfully";
+				}
+				response.status(201).json(ResponseObject);
+				
+			}).catch(function(error) {
+				next(error);
+			})
+		}
+		else {
+			ResponseObject.Success = false;
+			ResponseObject.Message = `You cannot add doctor doesn't found`;	
+			response.status(201).json(ResponseObject);	
+		}
+	}).catch(function(error) {
+		next(error);
+	})
+}
+
+exports.deleteClinic = function(request, response, next) {
+	let ResponseObject = {
+		Success: true,
+	}
+	ClinicSchema.deleteOne({_id: request.params.id}).then(function(result) {
+		DoctorSchema.updateMany({}, {$pull: {clinic: +(request.params.id)}}, {multi: true}).then(function() {
+			if(result.acknowledged && result.deletedCount == 1) {
+				EmployeeSchema.deleteMany({clinic: request.params.id}).then(function() {
+					ResponseObject.Message = "This clinic is deleted successfully";
+				})
+			}
+			else {
+				ResponseObject.Success = false
+				ResponseObject.Message = "This clinic is not deleted";
+			}
+			response.status(200).json(ResponseObject);
+		})
+	}).catch(function(error) {
+		next(error);
+	})
+}
+
+function updateClinic(nameProperty, request, response, next) {
 	let clinicData = {};
+	let ResponseObject = {
+		Success: true,
+	}
 	for(let prop of nameProperty) {
 		if(request.body[prop] != null) {
 			clinicData[prop] = request.body[prop];
@@ -151,7 +242,7 @@ exports.updateClinic = function(request, response, next) {
 					if(data.length == unique.length) {
 						ClinicSchema.updateOne({_id: request.params.id}, {$set: clinicData}).then(function(result) {
 							if(result.modifiedCount == 0) {
-								response.status(200).json({Updated: true, Message: "Nothing is changed"});
+								ResponseObject.Message = "Nothing is changed";
 							}
 							else {
 								if(unique.length > oldDoctors.length) { // add
@@ -159,7 +250,7 @@ exports.updateClinic = function(request, response, next) {
 										return oldDoctors.indexOf(e) == -1;
 									})
 									DoctorSchema.updateMany({_id: {$in: newDoctor}}, {$push: {clinic: +(request.params.id)}}).then(function() {
-										response.status(200).json({Updated: true, Message: "This clinic is updated successfully"});
+										ResponseObject.Message = "This clinic is updated succesfully";
 									})
 									
 								}
@@ -168,7 +259,7 @@ exports.updateClinic = function(request, response, next) {
 										return unique.indexOf(e) == -1;
 									})
 									DoctorSchema.updateMany({_id: {$in: deletedDoctor}}, {$pull: {clinic: +(request.params.id)}}, {multi: true}).then(function() {
-										response.status(200).json({Updated: true, Message: "This clinic is updated successfully"});
+										ResponseObject.Message = "This clinic is updated succesfully";
 									})
 								}
 								else { // add & delete
@@ -180,10 +271,11 @@ exports.updateClinic = function(request, response, next) {
 									})
 									DoctorSchema.updateMany({_id: {$in: newDoctor}}, {$push: {clinic: +(request.params.id)}}).then(function() {
 										DoctorSchema.updateMany({_id: {$in: deletedDoctor}}, {$pull: {clinic: +(request.params.id)}}, {multi: true}).then(function() {
-											response.status(200).json({Updated: true, Message: "This clinic is updated successfully"});
+											ResponseObject.Message = "This clinic is updated succesfully";
 										})
 									})
 								}
+								response.status(201).json(ResponseObject);
 							}
 							
 						}).catch(function(error) {
@@ -254,46 +346,6 @@ exports.updateClinic = function(request, response, next) {
 		else {
 			next(new Error('This clinic not found'));
 		}
-	}).catch(function(error) {
-		next(error);
-	})
-}
-
-exports.updateClinicManager = function(request, response, next) {
-	DoctorSchema.findOne({_id: request.body.manager}).then(function(data) {
-		if(data.length > 0) {
-			ClinicSchema.updateOne({_id: request.params.id}, {$set: {manager: request.body.manager}}).then(function(result) {
-				if(result.modifiedCount == 0) {
-					response.status(200).json({Updated: true, Message: "Nothing is changed"});
-				}
-				else {
-					response.status(200).json({Updated: true, Message: "This clinic is updated successfully"});
-				}
-				
-			}).catch(function(error) {
-				next(error);
-			})
-		}
-		else {
-			next(new Error(`You cannot add doctor doesn't found`))			
-		}
-	}).catch(function(error) {
-		next(error);
-	})
-}
-
-exports.deleteClinic = function(request, response, next) {
-	ClinicSchema.deleteOne({_id: request.params.id}).then(function(result) {
-		DoctorSchema.updateMany({}, {$pull: {clinic: +(request.params.id)}}, {multi: true}).then(function() {
-			if(result.acknowledged && result.deletedCount == 1) {
-				EmployeeSchema.deleteMany({clinic: request.params.id}).then(function() {
-					response.status(200).json({Deleted: true, Message: "This clinic is deleted successfully"});
-				})
-			}
-			else {
-				response.status(200).json({Deleted: false, Message: "This clinic is not deleted"});
-			}
-		})
 	}).catch(function(error) {
 		next(error);
 	})

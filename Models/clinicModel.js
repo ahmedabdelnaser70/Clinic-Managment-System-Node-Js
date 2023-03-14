@@ -25,6 +25,10 @@ const schema = new mongoose.Schema({
 	manager: {
 		type: Number,
 		ref: 'doctors'
+	},
+    availability: {
+		type: Boolean,
+		required: true
 	}
 })
 

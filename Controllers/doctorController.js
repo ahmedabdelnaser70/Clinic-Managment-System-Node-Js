@@ -6,7 +6,7 @@ require("../Models/doctorModel");
 require("../Models/clinicModel");
 require("../Models/appointmentModel");
 require('../Models/usersModel');
-require("./../Models/specialtyModel");
+require("../Models/specialtyModel");
 const fs = require('fs')
 const helper = require("../helper/helperFunctions");
 const DoctorSchema = mongoose.model("doctors");
@@ -98,7 +98,6 @@ exports.getDoctorById = (request, response, next) => {
    });
 };
 
-//post required field only while email and password is post into user collection not doctor collection 
 exports.addDoctor = (request, response, next) => {
    const hash = bcrypt.hashSync(request.body.password, salt);
    let bodyClinic = helper.intoNumber(...request.body.clinic);
@@ -132,6 +131,7 @@ exports.addDoctor = (request, response, next) => {
                            if(data == null) {
                               let newDoctor = new DoctorSchema(
                                  {
+                                    SSN: request.body.SSN,
                                     firstName: request.body.firstName,
                                     lastName: request.body.lastName,
                                     age: request.body.age,
@@ -139,7 +139,8 @@ exports.addDoctor = (request, response, next) => {
                                     phone: request.body.phone,
                                     clinic: bodyClinic,
                                     specialty: +request.body.specialty,
-                                    image: "uploads/images/doctors/doctor.png"
+                                    image: "uploads/images/doctors/doctor.png",
+                                    availability: true
                               });
                               newDoctor.save().then((result) => {
                                     ClinicSchema.updateMany({ _id: {$in: request.body.clinic}}, {$push: {doctors: result._id}})
@@ -147,8 +148,10 @@ exports.addDoctor = (request, response, next) => {
                                        let newUser = new UserSchema({
                                           email: request.body.email,
                                           password: hash,
+                                          SSN: request.body.SSN,
                                           userId: result._id,
-                                          role: 'doctor'
+                                          role: 'doctor',
+                                          availability: true
                                        })
                                        newUser.save().then(function(result) {
                                           ResponseObject.Data = [result];
@@ -181,7 +184,7 @@ exports.addDoctor = (request, response, next) => {
          ResponseObject.Success = false;
          ResponseObject.Message = "One of the Clinics that you try to add doesn't found";
       }
-      response.status(200).json(ResponseObject)
+      response.status(201).json(ResponseObject)
    }).catch(function(error) {
       next(error);
    })
@@ -213,10 +216,15 @@ exports.changeDoctorImageById = (request, response, next) => {
 			ResponseObject.Message = "The image is updated succesfully";
 		}
 		response.status(201).json(ResponseObject);
+   }).catch(function(error) {
+      next(error);
    })
 }
 
 exports.deleteDoctorById = (request, response, next) => {   
+   let ResponseObject = {
+      Success: true,
+   }
    UserSchema.deleteOne({role: "doctor", userId: request.params.id}).then(function() {
       DoctorSchema.findOneAndDelete({
          _id: request.params.id
@@ -233,11 +241,14 @@ exports.deleteDoctorById = (request, response, next) => {
                      fs.unlink("uploads/images/doctors/" + request.params.id + ".png", function (result) {
                         if (result) {
                            console.log("This image is not found");
-                           response.status(200).json({Deleted: false});
+                           ResponseObject.Success = false
+                           ResponseObject.Message = "This image is not found";
                         } else {
                            console.log("File removed:", "uploads/images/doctors/" + request.params.id + ".png");
-                           response.status(200).json({Deleted: true});
+                           ResponseObject.Success = true;
+                           ResponseObject.Message = "The doctor is deleted successfully";
                         }
+                        response.status(200).json(ResponseObject);
                      });
                   }).catch(error => {
                      next(error);
@@ -353,6 +364,13 @@ function updateDoctor(nameProperty, request, response, next) {
             .catch((error) => {
                next(error);
             });
+      }
+
+      if(request.body[prop] == "availability") {
+         UserSchema.updateOne({userId: request.params.id, role: "doctor"}, {$set: {availability: request.body.availability}}).then(function() {
+         }).catch(function(error) {
+            next(error);
+         })
       }
    }
    else {

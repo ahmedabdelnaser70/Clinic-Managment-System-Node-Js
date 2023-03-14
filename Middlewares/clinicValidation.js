@@ -8,7 +8,8 @@ exports.postClinicValidation = [
 	body("mobilePhone").matches(/^01[0125][0-9]{8}$/).withMessage("Invalid Mobile Phone"),
 	body("doctors").optional().isArray().withMessage("The doctors must be array"),
 	body("doctors.*").isInt().withMessage("Id of any doctor must be number"),
-	body("manager").optional().isInt().withMessage("Manager Id should be Intergar")
+	body("manager").optional().isInt().withMessage("Manager Id should be Intergar"),
+	body("availability").isBoolean().withMessage("The availability should be true or false")
 ]
 
 exports.patchClinicValidation = [
@@ -19,5 +20,7 @@ exports.patchClinicValidation = [
 	body("mobilePhone").optional().matches(/^01[0125][0-9]{8}$/).withMessage("Invalid Mobile Phone"),
 	body("doctors").optional().isArray().withMessage("The doctors must be array"),
 	body("doctors.*").optional().isInt().withMessage("Id of any doctor must be number"),
-	body("manager").optional().isInt().withMessage("Manager Id should be Intergar")
+	body("manager").optional().isInt().withMessage("Manager Id should be Intergar"),
+	body("availability").optional().isBoolean().withMessage("The availability should be true or false")
+
 ]

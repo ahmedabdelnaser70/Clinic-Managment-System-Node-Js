@@ -12,7 +12,7 @@ router.route("/clinics")
 router.route("/clinics/:id?")
 	.all(authenticatioMW.checkAdminOrManager)
 	.get(controller.getClinicById)
-	.patch(...patchClinicValidation, validationError, controller.updateClinic)
+	.patch(...patchClinicValidation, validationError, controller.updateClinicById)
 	.delete(authenticatioMW.checkAdmin, controller.deleteClinic)
 
 router.route("/clinics/manager/:id?")

@@ -15,6 +15,12 @@ const schema = new mongoose.Schema({
 		type: String, 
 		required: true, 
 	},
+	SSN:{
+		type: Number,
+		required: true, 
+		unique: true,
+        match: [/[0-9]{14}/, "Invalid SSN"]
+	},
 	userId: {
 		type: Number,
 		require: true
@@ -23,6 +29,10 @@ const schema = new mongoose.Schema({
 		type: String, 
 		required: true, 
 		enum: ['admin', 'doctor', 'patient', 'employee']
+	},
+	availability: {
+		type: Boolean,
+		required: true
 	}
 });
 
