@@ -253,6 +253,41 @@ exports.changeDoctorImageById = (request, response, next) => {
    })
 }
 
+//Continue...
+exports.updateDoctorAvailability = function(request, response, next) {
+	DoctorSchema.updateOne({_id: request.params.id}, {$set: {availability: request.body.availability}})
+	.then(function(result) {
+		let ResponseObject = {
+			Success: true,
+		}
+		if(request.body.availability == false) {
+			DoctorSchema.updateMany({specialty: request.params.id}, {$set: {availability: false}})
+			.then(function(data) {
+				if(result.modifiedCount == 0) {
+					ResponseObject.Message = "Nothing is changed";
+				}
+				else {
+					ResponseObject.Message = "The spceialty is updated succesfully";
+				}
+				response.status(201).json(ResponseObject);
+			}).catch(function(error) {
+				next(error);
+			})
+		}
+		else {
+			if(result.modifiedCount == 0) {
+				ResponseObject.Message = "Nothing is changed";
+			}
+			else {
+				ResponseObject.Message = "The spceialty is updated succesfully";
+			}
+			response.status(201).json(ResponseObject);
+		}
+	}).catch(function(error) {
+		next(error);
+	})
+}
+
 exports.deleteDoctorById = (request, response, next) => {   
    UserSchema.deleteOne({role: "doctor", userId: request.params.id}).then(function() {
       DoctorSchema.findOneAndDelete({

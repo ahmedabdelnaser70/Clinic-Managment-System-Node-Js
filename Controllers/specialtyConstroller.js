@@ -5,35 +5,8 @@ const SpecialtySchema = mongoose.model("specialties");
 require("./../Models/doctorModel");
 const DoctorSchema = mongoose.model("doctors");
 
-exports.getAllAvailableSpecialties = function(request, response, next) {
+exports.getAllSpecialties = function(request, response, next) {
 	let sortAndFiltering = helper.sortAndFiltering(request);
-	sortAndFiltering.reqQuery.availability = true;
-	SpecialtySchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
-	.sort(sortAndFiltering.sortedFields)
-	.then(function(result) {
-		let ResponseObject = {
-			Success: true,
-			Data: result,
-			// PageNo: request.length,
-			// ItemsNoPerPages: Number,
-			TotalPages: request.length
-		}
-		if(result.length > 0) {
-			ResponseObject.Message = 'Your request is success';
-		}
-		else {
-			ResponseObject.Success = false;
-			ResponseObject.Message = 'No specialties are found';
-		}
-		response.status(200).json(ResponseObject);
-	}).catch(function(error) {
-		next(error);
-	})
-}
-
-exports.getAllUnavailableSpecialties = function(request, response, next) {
-	let sortAndFiltering = helper.sortAndFiltering(request);
-	sortAndFiltering.reqQuery.availability = false;
 	SpecialtySchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
 	.sort(sortAndFiltering.sortedFields)
 	.then(function(result) {
@@ -82,31 +55,6 @@ exports.getSpecialtyById = function(request, response, next) {
 	});
 }
 
-exports.getSpecialtyBySpecialtyName = function(request, response, next) {
-	let sortAndFiltering = helper.sortAndFiltering(request);
-	SpecialtySchema.find({_id: request.params.specialty, availability: true}, sortAndFiltering.selectedFields)
-	.then((result) => {
-		let ResponseObject = {
-			Success: true,
-			Data: result,
-			// PageNo: request.length,
-			// ItemsNoPerPages: Number,
-			TotalPages: request.length
-		}
-		if(result.length > 0) {
-			ResponseObject.Message = 'Your request is success';
-		}
-		else {
-			ResponseObject.Success = false;
-			ResponseObject.Message = 'No specialties are found';
-		}
-		response.status(200).json(ResponseObject);
-	})
-	.catch((error) => {
-		next(error);
-	});
-}
-
 exports.addSpecialty = function(request, response, next) {
 	let newSpecialty = new SpecialtySchema({
 		specialty: request.body.specialty,
@@ -126,7 +74,7 @@ exports.addSpecialty = function(request, response, next) {
 }
 
 exports.updateSpecialtyName = function(request, response, next) {
-	SpecialtySchema.updateOne({_id: request.params.id, availability: true}, {$set: {specialty: request.body.specialty}})
+	SpecialtySchema.updateMany({_id: request.params.id, availability: true}, {$set: {specialty: request.body.specialty}})
 	.then(function(result) {
 		let ResponseObject = {
 			Success: true,
@@ -138,41 +86,6 @@ exports.updateSpecialtyName = function(request, response, next) {
 			ResponseObject.Message = "The spceialty is updated succesfully";
 		}
 		response.status(201).json(ResponseObject);
-	}).catch(function(error) {
-		next(error);
-	})
-}
-
-//Block all doctor with this specialty if availability = false
-exports.updateSpecialtyAvailability = function(request, response, next) {
-	SpecialtySchema.updateOne({_id: request.params.id}, {$set: {availability: request.body.availability}})
-	.then(function(result) {
-		let ResponseObject = {
-			Success: true,
-		}
-		if(request.body.availability == false) {
-			DoctorSchema.updateMany({specialty: request.params.id}, {$set: {status: false}})
-			.then(function(data) {
-				if(result.modifiedCount == 0) {
-					ResponseObject.Message = "Nothing is changed";
-				}
-				else {
-					ResponseObject.Message = "The spceialty is updated succesfully";
-				}
-				response.status(201).json(ResponseObject);
-			}).catch(function(error) {
-				next(error);
-			})
-		}
-		else {
-			if(result.modifiedCount == 0) {
-				ResponseObject.Message = "Nothing is changed";
-			}
-			else {
-				ResponseObject.Message = "The spceialty is updated succesfully";
-			}
-			response.status(201).json(ResponseObject);
-		}
 	}).catch(function(error) {
 		next(error);
 	})
