@@ -20,5 +20,8 @@ router.route("/doctors/:id?")
 router.route("/doctors/image/:id?")
    .patch(authenticatioMW.checkAdminOrDoctor, uploadDoctor, controller.changeDoctorImageById)
 
+router.route("/doctors/manager/:id?")
+   .patch(authenticatioMW.checkAdmin, patchDoctorValidation, controller.updateDoctorByManager)
+
 
 module.exports = router;
