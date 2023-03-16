@@ -18,7 +18,6 @@ const schema = new mongoose.Schema({
 	SSN:{
 		type: Number,
 		required: true, 
-		unique: true,
         match: [/[0-9]{14}/, "Invalid SSN"]
 	},
 	userId: {

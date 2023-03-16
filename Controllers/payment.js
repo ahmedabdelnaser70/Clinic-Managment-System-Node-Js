@@ -23,7 +23,7 @@ exports.paymentPost = async (request, response, next) => {
       },
    });
 
-   const patient = await patientSchema.findOne({ _id: request.id });
+   const patient = await patientSchema.findOne({ _id: request.userId });
    const doctor = await doctorSchema.findOne({ _id: request.body.doctorId });
    if (!patient) return next(new Error("patient not exist", 404));
 

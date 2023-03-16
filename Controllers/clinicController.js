@@ -253,12 +253,9 @@ function updateClinic(nameProperty, request, response, next) {
 								}
 							}
 							if(request.body.availability != undefined) {
-								DoctorSchema.updateMany({clinic: {$in: [request.params.id]}}, {$set: {availability: request.body.availability}})
+								EmployeeSchema.updateMany({clinic: request.params.id}, {$set: {availability: request.body.availability}})
 								.then(function() {
-									EmployeeSchema.updateMany({clinic: request.params.id}, {$set: {availability: request.body.availability}})
-									.then(function() {
-										response.status(201).json(ResponseObject);
-									})
+									response.status(201).json(ResponseObject);
 								})
 							}
 							else {
@@ -298,12 +295,9 @@ function updateClinic(nameProperty, request, response, next) {
 									ResponseObject.Message =  "This clinic is updated successfully";
 								}
 								if(request.body.availability != undefined) {
-									DoctorSchema.updateMany({clinic: {$in: [request.params.id]}}, {$set: {availability: request.body.availability}})
+									EmployeeSchema.updateMany({clinic: request.params.id}, {$set: {availability: request.body.availability}})
 									.then(function() {
-										EmployeeSchema.updateMany({clinic: request.params.id}, {$set: {availability: request.body.availability}})
-										.then(function() {
-											response.status(201).json(ResponseObject);
-										})
+										response.status(201).json(ResponseObject);
 									})
 								}
 								else {
@@ -338,12 +332,9 @@ function updateClinic(nameProperty, request, response, next) {
 							ResponseObject.Message = "This clinic is updated successfully";
 						}
 						if(request.body.availability != undefined) {
-							DoctorSchema.updateMany({clinic: {$in: [request.params.id]}}, {$set: {availability: request.body.availability}})
+							EmployeeSchema.updateMany({clinic: request.params.id}, {$set: {availability: request.body.availability}})
 							.then(function() {
-								EmployeeSchema.updateMany({clinic: request.params.id}, {$set: {availability: request.body.availability}})
-								.then(function() {
-									response.status(201).json(ResponseObject);
-								})
+								response.status(201).json(ResponseObject);
 							})
 						}
 						else {

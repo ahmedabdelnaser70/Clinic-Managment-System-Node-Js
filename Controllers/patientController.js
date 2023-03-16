@@ -179,22 +179,25 @@ function updatePatientData(nameProperty, request, response, next) {
          PatientData[prop] = request.body[prop];
       }
    }
-   if(PatientData != {}) {
-      PatientSchema.findByIdAndUpdate({_id: request.params.id}, {$set: PatientData})
+   if(Object.keys(PatientData).length > 0) {
+      PatientSchema.updateOne({_id: request.params.id}, {$set: PatientData})
          .then((result) => {
-            if(result) {
-               if(result.modifiedCount == 0) {
-                  ResponseObject.Message = "Nothing is changed";
-               }
-               else {
-                  ResponseObject.Message = "This patient is updated successfully";
-               }
+            if(result.modifiedCount == 0) {
+               ResponseObject.Message = "Nothing is changed";
                response.status(201).json(ResponseObject);
             }
             else {
-               let error = new Error("This patient is not found");
-               error.status = 404;
-               next(error);
+               ResponseObject.Message = "This patient is updated successfully";
+               if(request.body.availability != undefined) {
+                  UserSchema.updateOne({userId: request.params.id, role: "patient"}, {$set: {availability: request.body.availability}}).then(function() {
+                     response.status(201).json(ResponseObject);
+                  }).catch(function(error) {
+                     next(error);
+                  })
+               }
+               else {
+                  response.status(201).json(ResponseObject);
+               } 
             }
          })
          .catch((error) => {
