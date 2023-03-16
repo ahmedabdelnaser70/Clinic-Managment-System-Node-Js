@@ -465,7 +465,6 @@ function updateDoctor(nameProperty, request, response, next) {
             })
          })
       }
-
    }
    else {
       ResponseObject.Message = "Nothing is changed";

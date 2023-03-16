@@ -59,7 +59,7 @@ exports.getEmployeeByID = (request, response, next) => {
 			Data: result,
 			// PageNo: request.length,
 			// ItemsNoPerPages: Number,
-			TotalPages: request.length
+			TotalPages: result.length
 		}
       if (result.length > 0) {
          ResponseObject.Message = 'Your request is success';
@@ -131,7 +131,7 @@ exports.getEmployeesByClinicId = (request, response, next) => {
 			Data: result,
 			// PageNo: request.length,
 			// ItemsNoPerPages: Number,
-			TotalPages: request.length
+			TotalPages: result.length
 		}
       if (result.length > 0) {
          ResponseObject.Message = 'Your request is success';
@@ -147,7 +147,6 @@ exports.getEmployeesByClinicId = (request, response, next) => {
    });
 };
 
-//post required field only while email and password is post into user collection not doctor collection 
 exports.addEmployee = (request, response, next) => {
    UserSchema.findOne({email: request.body.email}).then(function(data) {
       let ResponseObject = {
@@ -209,7 +208,7 @@ exports.addEmployee = (request, response, next) => {
 };
 
 exports.updateEmployee = (request, response, next) => {
-   let nameProperty = ["SSN", "firstName", "lastName", "age", "address", "phone"]
+   let nameProperty = ["firstName", "lastName", "age", "address", "phone"]
    updateEmployee(nameProperty, request, response, next)
 };
 
@@ -225,7 +224,7 @@ exports.updateEmployeeByManager = (request, response, next) => {
                ClinicSchema.findOne({_id: request.body.clinic})
                .then((clinicData) => {
                   if (clinicData) {
-                        let nameProperty = ["SSN", "firstName", "lastName", "age", "address", "phone", "job", "clinic", "salary"]
+                        let nameProperty = ["firstName", "lastName", "age", "address", "phone", "job", "clinic", "salary", "availability"]
                         updateEmployee(nameProperty, request, response, next)
                      } 
                      else {
@@ -234,7 +233,7 @@ exports.updateEmployeeByManager = (request, response, next) => {
                   });
             }
             else {
-               let nameProperty = ["SSN", "firstName", "lastName", "age", "address", "phone", "job", "salary"]
+               let nameProperty = ["firstName", "lastName", "age", "address", "phone", "job", "salary", "availability"]
                updateEmployee(nameProperty, request, response, next)
             }
          }
@@ -293,7 +292,7 @@ exports.deleteEmployee = (request, response, next) => {
                   else {
                      console.log("File removed:", "uploads/images/doctors/" + request.params.id + ".png");
                      ResponseObject.Success = true;
-                     ResponseObject.Message = "The doctor is deleted successfully";
+                     ResponseObject.Message = "The employee is deleted successfully";
                   }
                   response.status(200).json(ResponseObject);
             });
@@ -309,7 +308,6 @@ exports.deleteEmployee = (request, response, next) => {
    })
 };
 
-//Must be rewrite
 function updateEmployee(nameProperty, request, response, next) {
    let employeeData = {};
    let ResponseObject = {
@@ -329,8 +327,17 @@ function updateEmployee(nameProperty, request, response, next) {
                }
                else {
                   ResponseObject.Message = "This employee is updated successfully";
+                  if(request.body.availability != undefined) {
+                     UserSchema.updateOne({userId: request.params.id, role: "employee"}, {$set: {availability: request.body.availability}}).then(function() {
+                        response.status(201).json(ResponseObject);
+                     }).catch(function(error) {
+                        next(error);
+                     })
+                  }
+                  else {
+                     response.status(201).json(ResponseObject);
+                  }               
                }
-               response.status(201).json(ResponseObject);
             }
             else {
                let error = new Error("This Employee is not found");

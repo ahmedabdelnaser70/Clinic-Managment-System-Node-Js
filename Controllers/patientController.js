@@ -19,7 +19,7 @@ exports.getAllPatient = (request, response, next) => {
 			Data: result,
 			// PageNo: request.length,
 			// ItemsNoPerPages: Number,
-			TotalPages: request.length
+			TotalPages: result.length
 		}
       if (result.length > 0) {
          ResponseObject.Message = 'Your request is success';
@@ -43,7 +43,7 @@ exports.getPatientById = (request, response, next) => {
 			Data: result,
 			// PageNo: request.length,
 			// ItemsNoPerPages: Number,
-			TotalPages: request.length
+			TotalPages: result.length
 		}
       if (result.length > 0) {
          ResponseObject.Message = 'Your request is success';
