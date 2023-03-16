@@ -25,7 +25,7 @@ const schema = new mongoose.Schema({
       required: true 
    },
    address: {
-      type: addressSchema,
+      type: addressSchema.addressSchema,
       required: true
    },
    phone: { 
@@ -49,7 +49,11 @@ const schema = new mongoose.Schema({
       type: Number,
       ref: "clinics",
       required: true
-   }
+   },
+   availability: {
+		type: Boolean,
+		required: true
+	}
 });
 
 schema.plugin(AutoIncrement, { inc_field: "_id", start_seq: 1, id: 'Employee_Id'});

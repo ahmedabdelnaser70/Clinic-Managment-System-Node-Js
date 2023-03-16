@@ -35,6 +35,10 @@ const schema = new mongoose.Schema({
    image: {
       type: String,
    },
+   availability: {
+		type: Boolean,
+		required: true
+	}
 });
 
 schema.plugin(AutoIncrement, {inc_field: "_id", start_seq: 1, id: "patient_id"});

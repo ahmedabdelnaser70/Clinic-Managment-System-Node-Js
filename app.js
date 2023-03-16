@@ -15,6 +15,7 @@ const reportRouter = require("./Routes/reportRoute");
 const invoiceRouter = require("./Routes/invoiceRouter");
 const publicRouter = require("./Routes/publicRoutes");
 const userRouter = require("./Routes/userRouters");
+const specailtyRouter = require("./Routes/specialtyRoute");
 const morgan = require("morgan");
 
 require("dotenv").config();
@@ -70,6 +71,7 @@ app.use(presciptionRouter);
 app.use(reportRouter);
 app.use(paymentRouter);
 app.use(invoiceRouter);
+app.use(specailtyRouter);
 
 
 //Third Middleware

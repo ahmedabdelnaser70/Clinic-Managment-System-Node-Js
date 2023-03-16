@@ -23,12 +23,21 @@ exports.getAllEmployees = (request, response, next) => {
    })
    .sort(sortAndFiltering.sortedFields)
    .then(function(result) {
-      if(result.length > 0) {
-         response.status(200).json(result);
-      }
+      let ResponseObject = {
+			Success: true,
+			Data: result,
+			// PageNo: request.length,
+			// ItemsNoPerPages: Number,
+			TotalPages: result.length
+		}
+      if (result.length > 0) {
+         ResponseObject.Message = 'Your request is success';
+      } 
       else {
-         response.status(200).json({Message: "Empty"});
+         ResponseObject.Success = false;
+			ResponseObject.Message = 'No Employees are found';
       }
+      response.status(200).json(ResponseObject)
    }).catch(function(error) {
       next(error);
    })
@@ -39,19 +48,27 @@ exports.getEmployeeByID = (request, response, next) => {
    if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
 		sortAndFiltering.selectedFields.clinic = 0;
 	}
-   EmployeeSchema.findOne({_id: request.params.id}, sortAndFiltering.selectedFields)
+   EmployeeSchema.find({_id: request.params.id}, sortAndFiltering.selectedFields)
    .populate({
       path: "clinic",
       select: {location: 1, _id: 0}
    })
-   .then((data) => {
-      if (data) {
-         response.status(201).json(data);
-      } else {
-         let error = new Error("Employee does not exist");
-         error.status = 403;
-         next(error);
+   .then((result) => {
+      let ResponseObject = {
+			Success: true,
+			Data: result,
+			// PageNo: request.length,
+			// ItemsNoPerPages: Number,
+			TotalPages: request.length
+		}
+      if (result.length > 0) {
+         ResponseObject.Message = 'Your request is success';
+      } 
+      else {
+         ResponseObject.Success = false;
+			ResponseObject.Message = 'This employee is not found';
       }
+      response.status(200).json(ResponseObject);
    })
    .catch((error) => {
       next(error);
@@ -63,22 +80,33 @@ exports.getEmployeeBySSN = (request, response, next) => {
    if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
 		sortAndFiltering.selectedFields.clinic = 0;
 	}
-   EmployeeSchema.findOne({SSN: request.params.id}, sortAndFiltering.selectedFields)
+   EmployeeSchema.find({SSN: request.params.id}, sortAndFiltering.selectedFields)
    .populate({
       path: "clinic",
       select: {location: 1, manager: 1, _id: 0}
    })
-   .then((data) => {
-      if(request.role == "admin" || data.clinic.manager == request.id) {
-         if (data) {
-            response.status(201).json(data);
-         } else {
-            next(new Error("Employee does not exist"));
+   .then((result) => {
+      if(request.role == "admin" || result[0].clinic.manager == request.id) {
+         let ResponseObject = {
+            Success: true,
+            Data: result,
+            // PageNo: request.length,
+            // ItemsNoPerPages: Number,
+            TotalPages: result.length
+         }
+         if (result.length > 0) {
+            ResponseObject.Message = 'Your request is success';
+            response.status(200).json(ResponseObject);
+         } 
+         else {
+            ResponseObject.Success = false;
+            ResponseObject.Message = 'This employee is not found';
+            response.status(200).json(ResponseObject);
          }
       }
       else {
          let error = new Error('Not allow for you to display the information of this employee');
-         error.status = 403;
+         error.status = 503;
          next(error);
       }
    })
@@ -97,14 +125,22 @@ exports.getEmployeesByClinicId = (request, response, next) => {
       path: "clinic",
       select: {location: 1, _id: 0}
    })
-   .then((data) => {
-      if (data.length > 0) {
-         response.status(201).json(data);
-      } else {
-         let error = new Error("No employees in this clinic");
-         error.status = 403;
-         next(error);
+   .then((result) => {
+      let ResponseObject = {
+			Success: true,
+			Data: result,
+			// PageNo: request.length,
+			// ItemsNoPerPages: Number,
+			TotalPages: request.length
+		}
+      if (result.length > 0) {
+         ResponseObject.Message = 'Your request is success';
+      } 
+      else {
+         ResponseObject.Success = false;
+			ResponseObject.Message = 'No employees in this clinic';
       }
+      response.status(200).json(ResponseObject);
    })
    .catch((error) => {
       next(error);
@@ -114,6 +150,12 @@ exports.getEmployeesByClinicId = (request, response, next) => {
 //post required field only while email and password is post into user collection not doctor collection 
 exports.addEmployee = (request, response, next) => {
    UserSchema.findOne({email: request.body.email}).then(function(data) {
+      let ResponseObject = {
+			Success: true,
+         Data: [],
+			Message: "The Doctor is added succesfully",
+			TotalPages: 1
+		}
       if(data == null) {
          ClinicSchema.findOne({_id: request.body.clinic}, {_id: 1, __v: 0}).then(function (data) {
             if (data != null) {
@@ -129,28 +171,37 @@ exports.addEmployee = (request, response, next) => {
                   salary: request.body.salary,
                   phone: request.body.phone,
                   clinic: request.body.clinic,
-                  image: "uploads/images/employees/employee.png"
+                  image: "uploads/images/employees/employee.png",
+                  availability: true
                });
                newEmployee.save()
                   .then((result) => {
                      let newEmail = new UserSchema({
                         email: request.body.email,
                         password: hash,
+                        SSN: request.body.SSN,
                         userId: result._id,
-                        role: 'employee'
+                        role: 'employee',
+                        availability: true
                      })
                      newEmail.save().then(function() {
-                        response.status(200).json(result);
+                        ResponseObject.Data = [result];
+                        ResponseObject.Message = "The employee is added successfully";
+                        response.status(201).json(ResponseObject)
                      })
                   })
                   .catch((error) => next(error));
             } else {
-               next(new Error("This clinic not found"));
+               ResponseObject.Success = false;
+               ResponseObject.Message = "This clinic that you try to add doesn't found";
+               response.status(201).json(ResponseObject)
             }
          });
       }
       else {
-         next(new Error("This email is already used"))
+         ResponseObject.Success = false;
+         ResponseObject.Message = "This is email is already used";
+         response.status(201).json(ResponseObject)
       }
    }).catch(function(error) {
       next(error);
@@ -206,12 +257,16 @@ exports.changeEmployeeImageById = (request, response, next) => {
       }
    }).then(function(result) {
       if(result) {
+         let ResponseObject = {
+            Success: true,
+         }
          if(result.modifiedCount == 0) {
-            response.status(200).json({Updated: true, Message: "Nothing is changed"});
+            ResponseObject.Message = "Nothing is changed";
          }
          else {
-            response.status(200).json({Updated: true, Message: "The image is updated successfully"});
+            ResponseObject.Message = "The image is updated succesfully";
          }
+         response.status(201).json(ResponseObject);
       }
       else {
          let error = new Error("This employee is not found");
@@ -222,17 +277,25 @@ exports.changeEmployeeImageById = (request, response, next) => {
 }
 
 exports.deleteEmployee = (request, response, next) => {
+   let ResponseObject = {
+      Success: true,
+   }
    UserSchema.deleteOne({role: "employee", userId: request.params.id}).then(function() {
       EmployeeSchema.findOneAndDelete({_id: request.params.id})
       .then(result => {
          if(result != null) {            
             fs.unlink("uploads/images/doctors/" + request.params.id + ".png", function (result) {
                if (result) {
-                  response.status(200).json({Deleted: false, Message: "This image is not found"});
-               } else {
                   console.log("File removed:", "uploads/images/doctors/" + request.params.id + ".png");
-                  response.status(200).json({Deleted: true});
-               }
+                  ResponseObject.Success = false
+                  ResponseObject.Message = "This image is not found";
+                  }
+                  else {
+                     console.log("File removed:", "uploads/images/doctors/" + request.params.id + ".png");
+                     ResponseObject.Success = true;
+                     ResponseObject.Message = "The doctor is deleted successfully";
+                  }
+                  response.status(200).json(ResponseObject);
             });
          }
          else {
@@ -246,8 +309,12 @@ exports.deleteEmployee = (request, response, next) => {
    })
 };
 
+//Must be rewrite
 function updateEmployee(nameProperty, request, response, next) {
    let employeeData = {};
+   let ResponseObject = {
+      Success: true,
+   }
    for(let prop of nameProperty) {
       if(request.body[prop] != null) {
          employeeData[prop] = request.body[prop];
@@ -258,11 +325,12 @@ function updateEmployee(nameProperty, request, response, next) {
          .then((result) => {
             if(result) {
                if(result.modifiedCount == 0) {
-                  response.status(200).json({Updated: true, Message: "Nothing is changed"});
+                  ResponseObject.Message = "Nothing is changed";
                }
                else {
-                  response.status(200).json({Updated: true, Message: "Employee is updated successfully"});
+                  ResponseObject.Message = "This employee is updated successfully";
                }
+               response.status(201).json(ResponseObject);
             }
             else {
                let error = new Error("This Employee is not found");
@@ -275,6 +343,7 @@ function updateEmployee(nameProperty, request, response, next) {
          });
    }
    else {
-      response.status(200).json({Updated: true, Message: "Nothing is changed"});
+      ResponseObject.Message = "Nothing is changed";
+      response.status(201).json(ResponseObject);
    }
 }

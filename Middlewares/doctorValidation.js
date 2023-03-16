@@ -2,7 +2,7 @@ const {body} = require("express-validator");
 
 exports.addDoctorValidation = [
    body("SSN")
-   .matches(/[0-9]{14}/)
+   .matches(/^(?:2|3)\d{13}$/)
    .withMessage("SSN should 14 Number"),
    body("firstName")
       .isAlpha()
@@ -31,7 +31,7 @@ exports.addDoctorValidation = [
    body("clinic").notEmpty().withMessage("The clinic must be not empty"),
    body("clinic.*").isInt().withMessage("Id of any clinic must be number"),
    body("specialty").isInt().withMessage("specialty must be a Number"),
-   body("availability").isBoolean().withMessage("Availability should be boolean")
+   body("availability").optional().isBoolean().withMessage("Availability should be boolean")
 ];
 
 exports.patchDoctorValidation = [

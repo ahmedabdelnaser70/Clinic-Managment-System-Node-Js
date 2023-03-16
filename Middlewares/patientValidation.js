@@ -2,7 +2,7 @@ const {body} = require("express-validator");
 
 let patientPost = [
    body("SSN")
-   .matches(/[0-9]{14}/)
+   .matches(/^(?:2|3)\d{13}$/)
    .withMessage("SSN should 14 Number"),
    body("firstName")
       .isString()
@@ -20,6 +20,7 @@ let patientPost = [
    body("password").isString().withMessage("password should be string"),
    body("phone").isString().withMessage("phone should be string"),
    body("image").optional().isString().withMessage("photo name must be string"),
+   body("availability").optional().isBoolean().withMessage("Availability should be boolean")
 ];
 
 let patientPatch = [
@@ -48,6 +49,8 @@ let patientPatch = [
    body("password").optional().isString().withMessage("password should be string"),
    body("phone").optional().isString().withMessage("phone should be string"),
    body("image").optional().isString().withMessage("photo name must be string"),
+   body("availability").optional().isBoolean().withMessage("Availability should be boolean")
+
 ];
 
 module.exports = {patientPost, patientPatch};

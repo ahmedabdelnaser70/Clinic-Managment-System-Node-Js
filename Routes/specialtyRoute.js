@@ -8,7 +8,7 @@ const authenticatioMW = require("../Middlewares/authentication")
 router.route("/specialties")
 	.all(authenticatioMW.checkAdmin)
 	.get(controller.getAllSpecialties)
-	.post(...specialtyPost, validationError, controller.addPresciption)
+	.post(...specialtyPost, validationError, controller.addSpecialty)
 
 router.route("/specialties/:id?")
 	.all(authenticatioMW.checkAdmin)

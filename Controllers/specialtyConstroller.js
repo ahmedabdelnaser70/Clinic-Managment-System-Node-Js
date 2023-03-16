@@ -57,8 +57,8 @@ exports.getSpecialtyById = function(request, response, next) {
 
 exports.addSpecialty = function(request, response, next) {
 	let newSpecialty = new SpecialtySchema({
-		specialty: request.body.specialty,
-		availability: request.body.availability
+		specialty: request.body.specialty.toLowerCase(),
+		availability: true
 	})
 	newSpecialty.save().then(function(result) {
 		let ResponseObject = {

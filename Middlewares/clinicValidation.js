@@ -9,7 +9,7 @@ exports.postClinicValidation = [
 	body("doctors").optional().isArray().withMessage("The doctors must be array"),
 	body("doctors.*").isInt().withMessage("Id of any doctor must be number"),
 	body("manager").optional().isInt().withMessage("Manager Id should be Intergar"),
-	body("availability").isBoolean().withMessage("The availability should be true or false")
+	body("availability").optional().isBoolean().withMessage("The availability should be true or false")
 ]
 
 exports.patchClinicValidation = [

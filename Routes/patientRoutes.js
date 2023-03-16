@@ -12,9 +12,13 @@ router.route("/patients")
 router.route("/patients/:id?")
    .all(authenticatioMW.checkAdminOrPatient)
    .get(controller.getPatientById)
-   .patch(patientPatch, validator, controller.updatePatient)
+   .patch(...patientPatch, validator, controller.updatePatient)
    .delete(authenticatioMW.checkAdmin, controller.deletePatient);
 
+router.route("/patients/admin/:id?")
+   .all(authenticatioMW.checkAdmin)
+   .patch(...patientPatch, validator, controller.updatePatientByAdmin)
+   
 router.route("/patients/image/:id?")
    .patch(authenticatioMW.checkAdminOrPatient, uploadPatient, controller.changePatientImageById)
 

@@ -14,14 +14,14 @@ router.route("/doctors")
 router.route("/doctors/:id?")
    .all(authenticatioMW.checkAdminOrDoctor)
    .get(controller.getDoctorById)
-   .patch(...patchDoctorValidation, controller.updateDoctorById)
+   .patch(...patchDoctorValidation, validator, controller.updateDoctorById)
    .delete(authenticatioMW.checkAdmin, controller.deleteDoctorById);
 
 router.route("/doctors/image/:id?")
    .patch(authenticatioMW.checkAdminOrDoctor, uploadDoctor, controller.changeDoctorImageById)
 
 router.route("/doctors/manager/:id?")
-   .patch(authenticatioMW.checkAdmin, patchDoctorValidation, controller.updateDoctorByManager)
+   .patch(authenticatioMW.checkAdmin, patchDoctorValidation, validator, controller.updateDoctorByManager)
 
 
 module.exports = router;
