@@ -21,12 +21,6 @@ router.route("/employees/manage/:id")
    .all(authenticatioMW.checkAdminOrManagerEmployee)
    .patch(PatchEmployeeValidation, controller.updateEmployeeByManager)
 
-router.route("/employees/SSN/:id")
-   .get(authenticatioMW.checkAdminOrManagerEmployee, controller.getEmployeeBySSN);
-
-router.route("/employees/clinic/:id")
-   .get(authenticatioMW.checkAdminOrManager, controller.getEmployeesByClinicId);
-
 router.route("/employees/image/:id?")
    .patch(authenticatioMW.checkAdminOrEmployee, uploadEmployee, controller.changeEmployeeImageById)
 

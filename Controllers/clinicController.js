@@ -19,6 +19,7 @@ exports.getAllClinic = function(request, response, next) {
 	.populate([
 		{
 			path: "doctors",
+			populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
 			select: {firstName:1, lastName: 1, specialty: 1, _id: 0}
 		},
 		{
