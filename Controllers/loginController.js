@@ -8,9 +8,11 @@ exports.login = (request, response, next) => {
     if(request.body.email == process.env.admin_email && request.body.password == process.env.admin_password) {
         let token = jwt.sign({role: "admin"}, process.env.SECRET_KEY, {expiresIn: "5h"});
         let newResponse = {
-            email: "admin@gmail.com",
-            password: "123456",
-            role: "admin",
+            data: {
+                email: "admin@gmail.com",
+                password: "123456",
+                role: "admin",
+            },
             token: token
         };
         response.status(200).json(newResponse);
@@ -22,6 +24,12 @@ exports.login = (request, response, next) => {
                     let token = jwt.sign({role: data.role, id: data.userId}, process.env.SECRET_KEY, {expiresIn: "1h"});
                     let newResponse = {data};
                     newResponse.token = token;
+                    // request.Data = {
+                    //     email: data.email,
+                    //     userId: data.userId,
+                    //     role: data.role,
+                    //     token: token
+                    // };
                     response.status(200).json(newResponse);
                 }
                 else {

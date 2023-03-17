@@ -19,11 +19,30 @@ let schemaServices = new mongoose.Schema(
 )
 
 const schema = new mongoose.Schema({
-   _id: { type: Number },
-   clinicId: { type: Number, required: true,ref: "clinics"},
-   patientId: { type: Number, required: true, ref: "patients"},
+   _id: { 
+      type: Number 
+   },
+   clinicId: { 
+      type: Number, 
+      required: true, 
+      ref: "clinics"
+   },
+   patientId: { 
+      type: Number, 
+      required: true, 
+      ref: "patients"
+   },
    services: [schemaServices],
-   date: { type: String, required: true, default: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "numeric", year: "numeric" }) },
+   date: { 
+      type: String, 
+      required: true, 
+      default: new Date().toLocaleDateString() 
+   },
+   time: { 
+      type: String, 
+      required: true, 
+      default: new Date().toLocaleTimeString() 
+   },
 });
 
 schema.plugin(AutoIncrement, { inc_field: "_id", start_seq: 1, id: "Invoice_Id" });
