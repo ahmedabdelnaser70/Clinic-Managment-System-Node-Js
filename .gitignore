@@ -13483,3 +13483,9 @@ node_modules/uri-js/node_modules/punycode/package.json
 node_modules/uri-js/node_modules/punycode/punycode.es6.js
 node_modules/uri-js/node_modules/punycode/punycode.js
 node_modules/uri-js/node_modules/punycode/README.md
+node_modules/cors/CONTRIBUTING.md
+node_modules/cors/HISTORY.md
+node_modules/cors/LICENSE
+node_modules/cors/package.json
+node_modules/cors/README.md
+node_modules/cors/lib/index.js
