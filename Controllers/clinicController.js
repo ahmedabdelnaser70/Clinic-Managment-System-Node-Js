@@ -92,7 +92,7 @@ exports.addClinic = function(request, response, next) {
 	let ResponseObject = {
 		Success: true,
 		Data: [],
-		Message: "The Doctor is added succesfully",
+		Message: "The Clinics is added succesfully",
 		TotalPages: 1
 	}
 	if(request.body.doctors != undefined) {
