@@ -1,183 +1,137 @@
 const mongoose = require('mongoose');
+const helper = require("../helper/helperFunctions");
 require('../Models/appointmentModel');
 require('../Models/clinicModel');
 require('../Models/doctorModel');
 require('../Models/patientModel');
 require('../Models/employeeModel');
-const helper = require("../helper/helperFunctions");
 const appointmentSchema = mongoose.model('appointments');
 const clinicSchema = mongoose.model('clinics');
 const doctorSchema = mongoose.model('doctors');
 const patientSchema = mongoose.model('patients');
-const EmployeeSchema = mongoose.model('employees');
-
-
 
 exports.getAllAppointments = (request, response, next) => {
-    // let sortAndFiltering = helper.sortAndFiltering(request);
-    let reqQuery = { ...request.query }; //using spread operator make any change on reqQuery wont affect request.query
-    let querystr = JSON.stringify(reqQuery);
-    querystr = querystr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
-    let findCondition = JSON.parse(querystr);
-    if (request.role == 'doctor') {
-        findCondition.doctorName = request.id;
-    } else if (request.role == 'patient') {
-        findCondition.patient = request.id;
-    }
-    let query = appointmentSchema.find(findCondition);
-
-    //Filtering
-    if (request.query.select) {
-        if(request.query.select.includes('clinic')&&request.query.select.includes('doctorName')&&request.query.select.includes('patient')){
-            query = query.populate({path: 'clinic', select: { name: 1, location: 1, _id: 0 }})
-            .populate({path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }})
-            .populate({path: 'patient', select: { firstName: 1, lastName: 1 }})
-        }
-        else if(request.query.select.includes('clinic')&&request.query.select.includes('doctorName')){
-            query = query.populate({path: 'clinic', select: { name: 1, location: 1, _id: 0 }})
-            .populate({path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }})
-        }else if(request.query.select.includes('clinic')&&request.query.select.includes('patient')){
-            query = query.populate({path: 'clinic', select: { name: 1, location: 1, _id: 0 }})
-            .populate({path: 'patient', select: { firstName: 1, lastName: 1 }})
-        }else if(request.query.select.includes('doctorName')&&request.query.select.includes('patient')){
-            query = query.populate({path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }})
-            .populate({path: 'patient', select: { firstName: 1, lastName: 1 }})
-        }
-        else if(request.query.select.includes('clinic')){
-            query = query.populate({path: 'clinic', select: { name: 1, location: 1, _id: 0 }})
-        }else if(request.query.select.includes('doctorName')){
-            query = query.populate({path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }})
-        }else if(request.query.select.includes('patient')){
-            query = query.populate({path: 'patient', select: { firstName: 1, lastName: 1 }})
-        }
-        let selectFields = request.query.select.split(',').join(' ');
-        query = query.select(selectFields);
-    }
-    else {
-        query = query.populate({path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }})
-        .populate({path: 'patient', select: {firstName: 1, lastName: 1}})
-        .populate({path: 'clinic', select: {name: 1, location: 1, _id: 0}})
-    }
-
-    if (request.query.sort) {
-        let sortFields = request.query.sort.split(',').join(' ');
-        query = query.sort(sortFields);
-    }
-
-    query
-        .then(result => {
-            response.status(200).json(result);
-        })
-        .catch(error => {
-            next(error);
-        })
-}
-
-exports.getappointmentsByClinicId = function (request, response, next) {
-    EmployeeSchema.find({ clinic: request.params.id}).then(function(date){
-        if(date.length > 0) {
-            let action = date.some(function(emp) {
-                return request.id == emp._id
-            })
-            if(action || request.role == 'admin') {
-                appointmentSchema.find({ clinic: request.params.id })
-                    .populate({
-                        path: 'clinic', select: { name: 1, location: 1, _id: 0 }
-                    })
-                    .populate({
-                        path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }
-                    })
-                    .populate({
-                        path: 'patient', select: { firstName: 1, lastName: 1 }
-                    })
-                    .then(result => {
-                        response.status(200).json(result);
-                    })
-                    .catch(error => {
-                        next(error);
-                    })
-            }
-            else {
-                let error = new Error("Not Allow for you to show the appointments of this clinic");
-                error.status = 403
-                next(error);
-            }
-        }
-        else {
-            let error = new Error("Not Allow for you to show the appointments of this clinic");
-            error.status = 403
-            next(error);
-        }
+    let sortAndFiltering = helper.sortAndFiltering(request);
+	if(request.query.select && request.query.select.split(',').indexOf("doctorName") == -1) {
+		sortAndFiltering.selectedFields.doctorName = 0;
+	}
+	if(request.query.select && request.query.select.split(',').indexOf("patient") == -1) {
+		sortAndFiltering.selectedFields.patient = 0;
+	}
+	if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
+		sortAndFiltering.selectedFields.clinic = 0;
+	}
+	appointmentSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
+    .populate([
+        {
+            path: 'doctorName', 
+            populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
+            select: { firstName: 1, lastName: 1, specialty: 1, phone: 1}},
+        {
+            path: 'patient', 
+            select: {firstName: 1, lastName: 1, age: 1}
+        },
+        {
+            path: 'clinic', 
+            select: {location: 1, mobilePhone: 1}}
+    ])
+    .sort(sortAndFiltering.sortedFields)
+    .then(result => {
+        let ResponseObject = {
+			Success: true,
+			Data: result,
+			// PageNo: request.length,
+			// ItemsNoPerPages: Number,
+			TotalPages: result.length
+		}
+		if (result.length > 0) {
+			ResponseObject.Message = 'Your request is success';
+		} 
+		else {
+			ResponseObject.Success = false;
+			ResponseObject.Message = 'No appointments are found';
+		}
+		response.status(200).json(ResponseObject);
+    })
+    .catch(error => {
+        next(error);
     })
 }
 
-exports.getappointmentsByDoctorId = function (request, response, next) {
-    if(request.id == request.params.id || request.role == "admin") {
-        appointmentSchema.find({ doctorName: request.params.id })
-            .populate({
-                path: 'clinic', select: { name: 1, location: 1, _id: 0 }
-            })
-            .populate({
-                path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }
-            })
-            .populate({
-                path: 'patient', select: { firstName: 1, lastName: 1 }
-            })
-            .then(result => {
-                response.status(200).json(result);
-            })
-            .catch(error => {
-                next(error);
-            })
-    }
-    else {
-        let error = new Error("Not Allow for you to show the appointments of this doctor");
-        error.status = 403
+exports.getAppointmentById = (request, response, next) => {
+    let sortAndFiltering = helper.sortAndFiltering(request);
+	if(request.query.select && request.query.select.split(',').indexOf("doctorName") == -1) {
+		sortAndFiltering.selectedFields.doctorName = 0;
+	}
+	if(request.query.select && request.query.select.split(',').indexOf("patient") == -1) {
+		sortAndFiltering.selectedFields.patient = 0;
+	}
+	if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
+		sortAndFiltering.selectedFields.clinic = 0;
+	}
+	appointmentSchema.find({_id: request.params.id}, sortAndFiltering.selectedFields)
+    .populate([
+        {
+            path: 'doctorName', 
+            populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
+            select: { firstName: 1, lastName: 1, specialty: 1, phone: 1}},
+        {
+            path: 'patient', 
+            select: {firstName: 1, lastName: 1, age: 1}
+        },
+        {
+            path: 'clinic', 
+            select: {location: 1, mobilePhone: 1}}
+    ])
+    .sort(sortAndFiltering.sortedFields)
+    .then(result => {
+        let ResponseObject = {
+			Success: true,
+			Data: result,
+			// PageNo: request.length,
+			// ItemsNoPerPages: Number,
+			TotalPages: result.length
+		}
+		if (result.length > 0) {
+			ResponseObject.Message = 'Your request is success';
+		} 
+		else {
+			ResponseObject.Success = false;
+			ResponseObject.Message = 'No appointment is found';
+		}
+		response.status(200).json(ResponseObject);
+    })
+    .catch(error => {
         next(error);
-    }
-}
-
-exports.getappointmentsByPatientId = function (request, response, next) {
-    if(request.id == request.params.id || request.role == "admin") {
-        appointmentSchema.find({ patient: request.params.id })
-            .populate({
-                path: 'clinic', select: { name: 1, location: 1, _id: 0 }
-            })
-            .populate({
-                path: 'doctorName', select: { firstName: 1, lastName: 1, phone: 1, _id: 0 }
-            })
-            .populate({
-                path: 'patient', select: { firstName: 1, lastName: 1 }
-            })
-            .then(result => {
-                response.status(200).json(result);
-            })
-            .catch(error => {
-                next(error);
-            })
-    }
-    else {
-        let error = new Error("Not Allow for you to show the appointments of this patient");
-        error.status = 403
-        next(error);
-    }
+    })
 }
 
 exports.addAppointment = (request, response, next) => {
+    let ResponseObject = {
+		Success: true,
+		Data: [],
+		Message: "The appointment is added succesfully",
+		TotalPages: 1
+	}
+    
     clinicSchema.findOne({ _id: request.body.clinic })
         .then(clinic => {
-            if (clinic) {
+            if(clinic) {
                 doctorSchema.findOne({ _id: request.body.doctor })
                     .then(doctor => {
-                        if (doctor) {
+                        if(doctor) {
                             patientSchema.findOne({ _id: request.body.patient })
                                 .then(patient => {
-                                    if (patient) {
+                                    if(patient) {
                                         appointmentSchema.findOne({ doctorName: request.body.doctor, date: request.body.date, timeFrom: request.body.timeFrom })
                                             .then(existAppointment => {
-                                                if (existAppointment) {
-                                                    next(new Error('Doctor cannot have two appointment at same time'))
-                                                } else {
+                                                if(existAppointment) {
+                                                    ResponseObject.Success = false;
+                                                    ResponseObject.Message = "Doctor cannot have two appointment at same time"
+                                                    response.status(201).json(ResponseObject)
+                                                    
+                                                } 
+                                                else {
                                                     let newAppointment = appointmentSchema({
                                                         clinic: request.body.clinic,
                                                         doctorName: request.body.doctor,
@@ -188,46 +142,34 @@ exports.addAppointment = (request, response, next) => {
                                                     })
                                                     newAppointment.save()
                                                         .then(result => {
-                                                            response.status(200).json(result);
+                                                            ResponseObject.Data = [result];
+                                                            response.status(201).json(ResponseObject);
                                                         })
                                                         .catch(error => {
                                                             next(error);
                                                         })
                                                 }
                                             })
-                                    } else {
-                                        next(new Error('The entered patient does not exist'));
+                                    } 
+                                    else {
+                                        ResponseObject.Success = false;
+                                        ResponseObject.Message = "The entered patient does not exist"
+                                        response.status(201).json(ResponseObject)
                                     }
                                 })
-                        } else {
-                            next(new Error('The entered doctor does not exist'));
+                        } 
+                        else {
+                            ResponseObject.Success = false;
+                            ResponseObject.Message = "The entered doctor does not exist"
+                            response.status(201).json(ResponseObject)
                         }
                     })
-            } else {
-                next(new Error('The entered clinic does not exist'));
+            } 
+            else {
+                ResponseObject.Success = false;
+                ResponseObject.Message = "The entered clinic does not exist"
+                response.status(201).json(ResponseObject)
             }
-        })
-        .catch(error => {
-            next(error);
-        })
-}
-
-exports.getAppointmentById = (request, response, next) => {
-    appointmentSchema.findOne({ _id: request.params.id })
-        .populate({
-            path: 'clinic', select: {location: 1, _id: 0 }
-        })
-        .populate({
-            path: 'doctorName', select: { firstName: 1, lastName: 1, _id: 0 }
-        })
-        .populate({
-            path: 'patient', select: { firstName: 1, lastName: 1, age: 1, _id: 0 }
-        })
-        .then(result => {
-            if (result)
-                response.status(200).json(result);
-            else
-                next(new Error('Appointment does not exist'));
         })
         .catch(error => {
             next(error);
