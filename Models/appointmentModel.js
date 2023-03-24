@@ -18,7 +18,10 @@ const schema = mongoose.Schema({
     patient: {
         type: Number,
         ref: "patients",
-        require: true
+    },
+    booked: {
+        type: Boolean,
+        required: true,
     },
     date: {
         type: String,
