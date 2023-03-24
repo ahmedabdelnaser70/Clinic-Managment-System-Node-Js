@@ -17,7 +17,7 @@ router.route('/appointments/:id?')
     .delete(controller.deleteAppointmentById)
 
 router.route('/appointments/book/:id?')
-    .all(authenticationMW.checkAdminOrPatient)
+    .all(authenticationMW.checkPatient)
     .patch(...patchAppointmentValidation, validator, controller.bookAppointment)
 
 module.exports = router;

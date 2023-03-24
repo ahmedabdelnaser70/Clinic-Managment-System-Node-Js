@@ -105,6 +105,17 @@ module.exports.checkAdminOrEmployee = ((request, response, next) => {
     }
 })
 
+//Used
+module.exports.checkPatient = ((request, response, next) => {
+    if (request.role == 'patient') {
+        next();
+    } else {
+        let error = new Error('Not Authorized');
+        error.status = 403;
+        next(error);
+    }
+})
+
 module.exports.checkPatientOrEmployee = ((request, response, next) => {
     if (request.role == 'patient' || request.role == 'employee') {
         next();
