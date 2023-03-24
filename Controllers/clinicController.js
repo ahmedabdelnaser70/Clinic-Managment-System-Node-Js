@@ -60,6 +60,7 @@ exports.getClinicById = function(request, response, next) {
 	.populate([
 		{
 			path: "doctors",
+			populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
 			select: {firstName:1, lastName: 1, specialty: 1, _id: 0}
 		},
 		{
@@ -113,6 +114,7 @@ exports.addClinic = function(request, response, next) {
 					DoctorSchema.updateMany({_id: {$in: unique}}, {$push: {clinic: result._id}}).then(function(res) {
 						ResponseObject.Data = [result];
                         ResponseObject.Message = "The clinic is added successfully";
+						response.status(201).json(ResponseObject);
 					}).catch(function(error) {
 						next(error);
 					})
@@ -122,9 +124,9 @@ exports.addClinic = function(request, response, next) {
 			}
 			else {
 				ResponseObject.Success = false;
-				ResponseObject.Message = "One of the doctors that you try to add doesn't found";		
+				ResponseObject.Message = "One of the doctors that you try to add doesn't found";
+				response.status(201).json(ResponseObject);		
 			}
-			response.status(201).json(ResponseObject);
 		})
 	}
 	else {
@@ -162,7 +164,7 @@ exports.addClinic = function(request, response, next) {
                 ResponseObject.Message = "The clinic is added successfully";
 				response.status(201).json(ResponseObject);
 			}).catch(function(error) {
-				next(error);
+				next(error.Message);
 			})
 		}
 	}
@@ -204,6 +206,8 @@ function updateClinic(nameProperty, request, response, next) {
 	let clinicData = {};
 	let ResponseObject = {
 		Success: true,
+		Data: [],
+		TotalPages: 1
 	}
 	for(let prop of nameProperty) {
 		if(request.body[prop] != null) {
@@ -220,6 +224,7 @@ function updateClinic(nameProperty, request, response, next) {
 						ClinicSchema.updateOne({_id: request.params.id}, {$set: clinicData}).then(function(result) {
 							if(result.modifiedCount == 0) {
 								ResponseObject.Message = "Nothing is changed";
+								response.status(201).json(ResponseObject);
 							}
 							else {
 								if(unique.length > oldDoctors.length) { // add
@@ -228,6 +233,7 @@ function updateClinic(nameProperty, request, response, next) {
 									})
 									DoctorSchema.updateMany({_id: {$in: newDoctor}}, {$push: {clinic: +(request.params.id)}}).then(function() {
 										ResponseObject.Message = "This clinic is updated succesfully";
+										response.status(201).json(ResponseObject);
 									})
 									
 								}
@@ -237,6 +243,7 @@ function updateClinic(nameProperty, request, response, next) {
 									})
 									DoctorSchema.updateMany({_id: {$in: deletedDoctor}}, {$pull: {clinic: +(request.params.id)}}, {multi: true}).then(function() {
 										ResponseObject.Message = "This clinic is updated succesfully";
+										response.status(201).json(ResponseObject);
 									})
 								}
 								else { // add & delete
@@ -249,19 +256,12 @@ function updateClinic(nameProperty, request, response, next) {
 									DoctorSchema.updateMany({_id: {$in: newDoctor}}, {$push: {clinic: +(request.params.id)}}).then(function() {
 										DoctorSchema.updateMany({_id: {$in: deletedDoctor}}, {$pull: {clinic: +(request.params.id)}}, {multi: true}).then(function() {
 											ResponseObject.Message = "This clinic is updated succesfully";
+											response.status(201).json(ResponseObject);
 										})
 									})
 								}
 							}
-							if(request.body.availability != undefined) {
-								EmployeeSchema.updateMany({clinic: request.params.id}, {$set: {availability: request.body.availability}})
-								.then(function() {
-									response.status(201).json(ResponseObject);
-								})
-							}
-							else {
-								response.status(201).json(ResponseObject);
-							}
+							
 						}).catch(function(error) {
 							next(error);
 						})
@@ -277,31 +277,14 @@ function updateClinic(nameProperty, request, response, next) {
 				if(request.body.manager != undefined) {
 					DoctorSchema.findOne({_id: request.body.manager}, {_id: 1}).then(function(result) {
 						if(result != null) {
-							ClinicSchema.updateOne(
-								{
-									_id: request.params.id,
-								},
-								{ 
-									$set: {
-										location: request.body.location,
-										mobilePhone: request.body.mobilePhone,
-										manager: request.body.manager
-									}
-								}
-							).then(function(result) {
+							ClinicSchema.updateOne({_id: request.params.id}, {$set: clinicData})
+							.then(function(result) {
 								if(result.modifiedCount == 0) {
 									ResponseObject.Message = "Nothing is changed";
+									response.status(201).json(ResponseObject);
 								}
 								else {
 									ResponseObject.Message =  "This clinic is updated successfully";
-								}
-								if(request.body.availability != undefined) {
-									EmployeeSchema.updateMany({clinic: request.params.id}, {$set: {availability: request.body.availability}})
-									.then(function() {
-										response.status(201).json(ResponseObject);
-									})
-								}
-								else {
 									response.status(201).json(ResponseObject);
 								}
 							}).catch(function(error) {
@@ -314,31 +297,14 @@ function updateClinic(nameProperty, request, response, next) {
 					})
 				}
 				else {
-					ClinicSchema.updateOne(
-						{
-							_id: request.params.id,
-						},
-						{ 
-							$set: {
-								name: request.body.name,
-								location: request.body.location,
-								mobilePhone: request.body.mobilePhone,
-							}
-						}
-					).then(function(result) {
+					ClinicSchema.updateOne({_id: request.params.id}, {$set: clinicData})
+					.then(function(result) {
 						if(result.modifiedCount == 0) {
 							ResponseObject.Message = "Nothing is changed";
+							response.status(201).json(ResponseObject);
 						}
 						else {
 							ResponseObject.Message = "This clinic is updated successfully";
-						}
-						if(request.body.availability != undefined) {
-							EmployeeSchema.updateMany({clinic: request.params.id}, {$set: {availability: request.body.availability}})
-							.then(function() {
-								response.status(201).json(ResponseObject);
-							})
-						}
-						else {
 							response.status(201).json(ResponseObject);
 						}
 					}).catch(function(error) {
@@ -356,4 +322,3 @@ function updateClinic(nameProperty, request, response, next) {
 		next(error);
 	})
 }
-
