@@ -27,7 +27,7 @@ exports.getAllAppointments = (request, response, next) => {
         {
             path: 'doctorName', 
             populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
-            select: { firstName: 1, lastName: 1, specialty: 1, phone: 1}},
+            select: { firstName: 1, lastName: 1, specialty: 1}},
         {
             path: 'patient', 
             select: {firstName: 1, lastName: 1, age: 1}
@@ -75,7 +75,7 @@ exports.getAppointmentById = (request, response, next) => {
         {
             path: 'doctorName', 
             populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
-            select: { firstName: 1, lastName: 1, specialty: 1, phone: 1}},
+            select: { firstName: 1, lastName: 1, specialty: 1}},
         {
             path: 'patient', 
             select: {firstName: 1, lastName: 1, age: 1}
@@ -121,44 +121,34 @@ exports.addAppointment = (request, response, next) => {
                 DoctorSchema.findOne({ _id: request.body.doctor })
                     .then(doctor => {
                         if(doctor) {
-                            PatientSchema.findOne({ _id: request.body.patient })
-                                .then(patient => {
-                                    if(patient) {
-                                        AppointmentSchema.findOne({ doctorName: request.body.doctor, date: request.body.date, timeFrom: request.body.timeFrom })
-                                            .then(existAppointment => {
-                                                if(existAppointment) {
-                                                    ResponseObject.Success = false;
-                                                    ResponseObject.Message = "Doctor cannot have two appointment at same time"
-                                                    response.status(201).json(ResponseObject)
-                                                    
-                                                } 
-                                                else {
-                                                    let newAppointment = AppointmentSchema({
-                                                        clinic: request.body.clinic,
-                                                        doctorName: request.body.doctor,
-                                                        patient: -1,
-                                                        booked: false,
-                                                        date: request.body.date,
-                                                        timeFrom: request.body.timeFrom,
-                                                        timeTo: request.body.timeTo
-                                                    })
-                                                    newAppointment.save()
-                                                        .then(result => {
-                                                            ResponseObject.Data = [result];
-                                                            response.status(201).json(ResponseObject);
-                                                        })
-                                                        .catch(error => {
-                                                            next(error);
-                                                        })
-                                                }
-                                            })
-                                    } 
-                                    else {
-                                        ResponseObject.Success = false;
-                                        ResponseObject.Message = "The entered patient does not exist"
-                                        response.status(201).json(ResponseObject)
-                                    }
-                                })
+                            AppointmentSchema.findOne({ doctorName: request.body.doctor, date: request.body.date, timeFrom: request.body.timeFrom })
+                            .then(existAppointment => {
+                                if(existAppointment) {
+                                    ResponseObject.Success = false;
+                                    ResponseObject.Message = "Doctor cannot have two appointment at same time"
+                                    response.status(201).json(ResponseObject)
+                                    
+                                } 
+                                else {
+                                    let newAppointment = AppointmentSchema({
+                                        clinic: request.body.clinic,
+                                        doctorName: request.body.doctor,
+                                        patient: -1,
+                                        booked: false,
+                                        date: request.body.date,
+                                        timeFrom: request.body.timeFrom,
+                                        timeTo: request.body.timeTo
+                                    })
+                                    newAppointment.save()
+                                        .then(result => {
+                                            ResponseObject.Data = [result];
+                                            response.status(201).json(ResponseObject);
+                                        })
+                                        .catch(error => {
+                                            next(error);
+                                        })
+                                }
+                            })
                         } 
                         else {
                             ResponseObject.Success = false;
@@ -182,7 +172,7 @@ exports.updateAppointmentById = (request, response, next) => {
     let ResponseObject = {
 		Success: true,
 		Data: [],
-		Message: "The appointment is booked successfully",
+		Message: "The appointment is updated successfully",
 		TotalPages: 1
 	}
     if(request.body.clinic != undefined) {
@@ -211,7 +201,7 @@ exports.bookAppointment = (request, response, next) => {
 		TotalPages: 1
 	}
     let booking = {
-        parent: -1,
+        patient: -1,
         booked: false
     }
     if(request.body.booked) {
@@ -219,7 +209,7 @@ exports.bookAppointment = (request, response, next) => {
         PatientSchema.findOne({_id: request.body.patient})
         .then(function(res) {
             if(res) {
-                booking.parent = +request.body.patient;
+                booking.patient = +request.body.patient;
                 updating(request, response, next, booking, ResponseObject);
             }
             else {
