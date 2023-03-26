@@ -13,8 +13,8 @@ const PatientSchema = mongoose.model('patients');
 
 exports.getAllAppointments = (request, response, next) => {
     let sortAndFiltering = helper.sortAndFiltering(request);
-	if(request.query.select && request.query.select.split(',').indexOf("doctorName") == -1) {
-		sortAndFiltering.selectedFields.doctorName = 0;
+	if(request.query.select && request.query.select.split(',').indexOf("doctor") == -1) {
+		sortAndFiltering.selectedFields.doctor = 0;
 	}
 	if(request.query.select && request.query.select.split(',').indexOf("patient") == -1) {
 		sortAndFiltering.selectedFields.patient = 0;
@@ -25,7 +25,7 @@ exports.getAllAppointments = (request, response, next) => {
 	AppointmentSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
     .populate([
         {
-            path: 'doctorName', 
+            path: 'doctor', 
             populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
             select: { firstName: 1, lastName: 1, specialty: 1}},
         {
@@ -61,8 +61,8 @@ exports.getAllAppointments = (request, response, next) => {
 
 exports.getAppointmentById = (request, response, next) => {
     let sortAndFiltering = helper.sortAndFiltering(request);
-	if(request.query.select && request.query.select.split(',').indexOf("doctorName") == -1) {
-		sortAndFiltering.selectedFields.doctorName = 0;
+	if(request.query.select && request.query.select.split(',').indexOf("doctor") == -1) {
+		sortAndFiltering.selectedFields.doctor = 0;
 	}
 	if(request.query.select && request.query.select.split(',').indexOf("patient") == -1) {
 		sortAndFiltering.selectedFields.patient = 0;
@@ -73,7 +73,7 @@ exports.getAppointmentById = (request, response, next) => {
 	AppointmentSchema.find({_id: request.params.id}, sortAndFiltering.selectedFields)
     .populate([
         {
-            path: 'doctorName', 
+            path: 'doctor', 
             populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
             select: { firstName: 1, lastName: 1, specialty: 1}},
         {
@@ -121,7 +121,7 @@ exports.addAppointment = (request, response, next) => {
                 DoctorSchema.findOne({ _id: request.body.doctor })
                     .then(doctor => {
                         if(doctor) {
-                            AppointmentSchema.findOne({ doctorName: request.body.doctor, date: request.body.date, timeFrom: request.body.timeFrom })
+                            AppointmentSchema.findOne({ doctor: request.body.doctor, date: request.body.date, timeFrom: request.body.timeFrom })
                             .then(existAppointment => {
                                 if(existAppointment) {
                                     ResponseObject.Success = false;
@@ -132,7 +132,7 @@ exports.addAppointment = (request, response, next) => {
                                 else {
                                     let newAppointment = AppointmentSchema({
                                         clinic: request.body.clinic,
-                                        doctorName: request.body.doctor,
+                                        doctor: request.body.doctor,
                                         patient: -1,
                                         booked: false,
                                         date: request.body.date,
@@ -244,15 +244,15 @@ exports.deleteAppointmentById = (request, response, next) => {
 }
 
 function checkDoctor(request, response, next, ResponseObject) {
-    let nameProperty = ["clinic", "doctorName", "date", "timeFrom", "timeTo"];
+    let nameProperty = ["clinic", "doctor", "date", "timeFrom", "timeTo"];
     let changes = {};
     for(let item of nameProperty) {
         if(request.body[item] != undefined) {
             changes[item] = request.body[item];
         }
     }
-    if(request.body.doctorName != undefined) {
-        DoctorSchema.findOne({_id: request.body.doctorName})
+    if(request.body.doctor != undefined) {
+        DoctorSchema.findOne({_id: request.body.doctor})
         .then(function(res) {
             if(res) {
                 if(Object.keys(changes).length == 0) {
@@ -281,8 +281,8 @@ function checkDoctor(request, response, next, ResponseObject) {
     }
 }
 
-function updating(request, response, next, booking, ResponseObject) {
-    AppointmentSchema.updateOne({_id: request.params.id}, {$set: booking})
+function updating(request, response, next, changes, ResponseObject) {
+    AppointmentSchema.updateOne({_id: request.params.id}, {$set: changes})
         .then(result => {
             if(result.modifiedCount == 0) {
                 ResponseObject.Message = "Nothing is changed";

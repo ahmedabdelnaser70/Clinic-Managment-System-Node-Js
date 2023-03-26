@@ -10,7 +10,7 @@ const schema = mongoose.Schema({
         ref: 'clinics',
         required: [true, 'the clinic reference is required']
     },
-    doctorName: {
+    doctor: {
         type: Number,
         ref: 'doctors',
         required: [true, 'the doctor reference is required']
