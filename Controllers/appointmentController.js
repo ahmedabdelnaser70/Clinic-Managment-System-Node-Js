@@ -230,9 +230,7 @@ exports.deleteAppointmentById = (request, response, next) => {
     AppointmentSchema.deleteOne({_id: request.params.id})
         .then(result => {
             if(result.acknowledged && result.deletedCount == 1) {
-				EmployeeSchema.deleteMany({clinic: request.params.id}).then(function() {
-					ResponseObject.Message = "This appointment is deleted successfully";
-				})
+                ResponseObject.Message = "This appointment is deleted successfully";
 			}
 			else {
 				ResponseObject.Success = false
