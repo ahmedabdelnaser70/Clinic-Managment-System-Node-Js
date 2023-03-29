@@ -124,7 +124,6 @@ exports.addClinic = function(request, response, next) {
 							select: {firstName:1, lastName: 1, specialty: 1 }
 						}
 					]).then(function() {
-						console.log(result);
 						DoctorSchema.updateMany({_id: {$in: unique}}, {$push: {clinic: result._id}}).then(function(res) {
 							ResponseObject.Data = [result];
 							ResponseObject.Message = "The clinic is added successfully";
