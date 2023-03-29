@@ -133,7 +133,7 @@ exports.addInvoice = (request, response, next) => {
                      });
                      newInvoice.save()
                      .then((result) => {
-                        InvoiceSchema.findOne({_id: result._id})
+                        result
                         .populate([
                            { 
                               path: "patientId", 
@@ -148,7 +148,7 @@ exports.addInvoice = (request, response, next) => {
                               populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}), 
                               select: {_id: 0, specialty: 1} 
                            }
-                        ]).then(function(result) {
+                        ]).then(function() {
                            helper.createPdf([result]);
                            ResponseObject.Data.push(result);
                            response.status(201).json(ResponseObject);

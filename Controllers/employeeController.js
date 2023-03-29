@@ -112,9 +112,14 @@ exports.addEmployee = (request, response, next) => {
                         availability: true
                      })
                      newEmail.save().then(function() {
-                        ResponseObject.Data = [result];
-                        ResponseObject.Message = "The employee is added successfully";
-                        response.status(201).json(ResponseObject)
+                        result.populate({
+                           path: "clinic",
+                           select: {location: 1, _id: 0},
+                        }).then(function() {
+                           ResponseObject.Data = [result];
+                           ResponseObject.Message = "The employee is added successfully";   
+                           response.status(201).json(ResponseObject)
+                        })
                      })
                   })
                   .catch((error) => next(error));

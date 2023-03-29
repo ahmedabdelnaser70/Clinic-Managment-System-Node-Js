@@ -141,8 +141,22 @@ exports.addAppointment = (request, response, next) => {
                                     })
                                     newAppointment.save()
                                         .then(result => {
-                                            ResponseObject.Data = [result];
-                                            response.status(201).json(ResponseObject);
+                                            result.populate([
+                                                {
+                                                    path: 'doctor', 
+                                                    populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
+                                                    select: { firstName: 1, lastName: 1, specialty: 1}},
+                                                {
+                                                    path: 'patient', 
+                                                    select: {firstName: 1, lastName: 1, age: 1}
+                                                },
+                                                {
+                                                    path: 'clinic', 
+                                                    select: {location: 1, mobilePhone: 1}}
+                                            ]).then(function() {
+                                                ResponseObject.Data = [result];
+                                                response.status(201).json(ResponseObject);
+                                            })
                                         })
                                         .catch(error => {
                                             next(error);

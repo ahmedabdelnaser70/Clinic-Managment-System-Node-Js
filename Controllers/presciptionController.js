@@ -268,7 +268,26 @@ exports.addPresciption = function (request, response, next) {
                            });
                            newPresciption.save()
                               .then(function (result) {
-                                 response.status(201).json(result);
+                                 request.populate([
+                                    {
+                                       path: "clinic",
+                                       select: { location: 1, _id: 0 },
+                                    },
+                                    {
+                                       path: "doctor",
+                                       select: { firstName: 1, lastName: 1, specialty: 1, _id: 0 },
+                                    },
+                                    {
+                                       path: "patient",
+                                       select: { firstName: 1, lastName: 1, age: 1, _id: 0 },
+                                    },
+                                    {
+                                       path: "medicine.medicineId",
+                                       select: { name: 1, _id: 0 },
+                                    },
+                                 ]).then(function() {
+                                    response.status(201).json(result);
+                                 })
                               })
                               .catch(function (error) {
                                  next(error);

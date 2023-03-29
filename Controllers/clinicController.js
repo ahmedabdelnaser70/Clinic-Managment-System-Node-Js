@@ -111,13 +111,27 @@ exports.addClinic = function(request, response, next) {
 					manager: request.body.manager,
 					availability: true
 				})
-				newClinic.save().then(function(result) {
-					DoctorSchema.updateMany({_id: {$in: unique}}, {$push: {clinic: result._id}}).then(function(res) {
-						ResponseObject.Data = [result];
-                        ResponseObject.Message = "The clinic is added successfully";
-						response.status(201).json(ResponseObject);
-					}).catch(function(error) {
-						next(error);
+				newClinic.save()
+				.then(function(result) {
+					result.populate([
+						{
+							path: "doctors",
+							populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
+							select: {firstName:1, lastName: 1, specialty: 1, _id: 0}
+						},
+						{
+							path: "manager",
+							select: {firstName:1, lastName: 1, specialty: 1 }
+						}
+					]).then(function() {
+						console.log(result);
+						DoctorSchema.updateMany({_id: {$in: unique}}, {$push: {clinic: result._id}}).then(function(res) {
+							ResponseObject.Data = [result];
+							ResponseObject.Message = "The clinic is added successfully";
+							response.status(201).json(ResponseObject);
+						}).catch(function(error) {
+							next(error);
+						})
 					})
 				}).catch(function(error) {
 					next(error);

@@ -143,6 +143,16 @@ exports.addDoctor = (request, response, next) => {
                                     availability: true
                               });
                               newDoctor.save().then((result) => {
+                                 result.populate([
+                                    {
+                                       path: "clinic",
+                                       select: {location: 1, _id: 0}
+                                    },
+                                    {
+                                       path: "specialty",
+                                       select: {specialty: 1, _id: 0}
+                                    }
+                                 ]).then(function() {
                                     ClinicSchema.updateMany({ _id: {$in: request.body.clinic}}, {$push: {doctors: result._id}})
                                     .then(function () {
                                        let newUser = new UserSchema({
@@ -161,6 +171,7 @@ exports.addDoctor = (request, response, next) => {
                                     }).catch((error) => {
                                        next(error);
                                     });
+                                 })
                               }).catch((error) => {
                                  next(error);
                               });
