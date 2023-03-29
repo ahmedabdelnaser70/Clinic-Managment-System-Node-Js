@@ -97,9 +97,10 @@ exports.addClinic = function(request, response, next) {
 		TotalPages: 1
 	}
 	if(request.body.doctors != undefined) {
-		let unique = Array.from(new Set([...request.body.doctors]))
+		let unique = [...request.body.doctors]
 		if(request.body.manager != undefined) {
 			unique.push(request.body.manager)
+			unique = Array.from(new Set([...unique]))
 		}
 		DoctorSchema.find({_id: {$in: unique}}).then(function(data) {
 			if(data.length == unique.length) {
@@ -129,7 +130,8 @@ exports.addClinic = function(request, response, next) {
 			}
 		})
 	}
-	else {
+	else 
+	{
 		if(request.body.manager != undefined) {
 			DoctorSchema.findOne({_id: request.body.manager}, {_id: 1}).then(function(result) {
 				if(result != null) {
@@ -141,7 +143,7 @@ exports.addClinic = function(request, response, next) {
 					})
 					newClinic.save().then(function(result) {
 						ResponseObject.Data = [result];
-                        ResponseObject.Message = "The clinic is added successfully";
+						ResponseObject.Message = "The clinic is added successfully";
 					}).catch(function(error) {
 						next(error);
 					})
@@ -161,7 +163,7 @@ exports.addClinic = function(request, response, next) {
 			})
 			newClinic.save().then(function(result) {
 				ResponseObject.Data = [result];
-                ResponseObject.Message = "The clinic is added successfully";
+				ResponseObject.Message = "The clinic is added successfully";
 				response.status(201).json(ResponseObject);
 			}).catch(function(error) {
 				next(error.Message);
