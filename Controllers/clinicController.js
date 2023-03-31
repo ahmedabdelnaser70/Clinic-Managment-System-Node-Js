@@ -204,13 +204,14 @@ exports.deleteClinic = function(request, response, next) {
 			if(result.acknowledged && result.deletedCount == 1) {
 				EmployeeSchema.deleteMany({clinic: request.params.id}).then(function() {
 					ResponseObject.Message = "This clinic is deleted successfully";
+					response.status(200).json(ResponseObject);
 				})
 			}
 			else {
 				ResponseObject.Success = false
 				ResponseObject.Message = "This clinic is not deleted";
+				response.status(200).json(ResponseObject);
 			}
-			response.status(200).json(ResponseObject);
 		})
 	}).catch(function(error) {
 		next(error);

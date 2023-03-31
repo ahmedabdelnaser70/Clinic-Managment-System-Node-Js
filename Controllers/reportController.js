@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-require("../Models/reportModel")
 const pdfKit = require("pdfkit");
 let fs = require("fs");
 const appointmentSchema = mongoose.model("appointments")

@@ -28,6 +28,7 @@ exports.getAllPresciptions = function (request, response, next) {
          },
          {
             path: "doctor",
+            populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
             select: { firstName: 1, lastName: 1, specialty: 1, _id: 0 },
          },
          {
@@ -40,8 +41,22 @@ exports.getAllPresciptions = function (request, response, next) {
          },
       ])
       .sort(sortAndFiltering.sortedFields)
-      .then(function (data) {
-         response.status(200).json(data);
+      .then(function (result) {
+         let ResponseObject = {
+            Success: true,
+            Data: result,
+            // PageNo: request.length,
+            // ItemsNoPerPages: Number,
+            TotalPages: result.length
+         }
+         if (result.length > 0) {
+            ResponseObject.Message = 'Your request is success';
+         } 
+         else {
+            ResponseObject.Success = false;
+            ResponseObject.Message = 'No prescriptions are found';
+         }
+         response.status(200).json(ResponseObject);
       })
       .catch(function (error) {
          next(error);
@@ -59,47 +74,58 @@ exports.getPresciptionById = function (request, response, next) {
    if(request.query.select && request.query.select.split(',').indexOf("patient") == -1) {
 		sortAndFiltering.selectedFields.patient = 0;
 	}
-   PresciptionsSchema.findOne(
+   PresciptionsSchema.find(
       {
          _id: request.params.id,
       },
       sortAndFiltering.selectedFields
    )
-      .populate([
-         {
-            path: "clinic",
-            select: { location: 1, _id: 0 },
-         },
-         {
-            path: "doctor",
-            select: {firstName: 1, lastName: 1, specialty: 1 },
-         },
-         {
-            path: "patient",
-            select: { firstName: 1, lastName: 1, age: 1, _id: 0 },
-         },
-         {
-            path: "medicine.medicineId",
-            select: { name: 1, _id: 0 },
-         },
-      ])
-      .then(function (result) {
-         if(request.id == result.doctor._id || request.role == 'admin') {
-            if (result) {
-               response.status(200).json(result);
-            } else {
-               next(new Error("This presciption is not found"));
-            }
-         }
+   .populate([
+      {
+         path: "clinic",
+         select: { location: 1, _id: 0 },
+      },
+      {
+         path: "doctor",
+         populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
+         select: { firstName: 1, lastName: 1, specialty: 1, _id: 0 },
+      },
+      {
+         path: "patient",
+         select: { firstName: 1, lastName: 1, age: 1, _id: 0 },
+      },
+      {
+         path: "medicine.medicineId",
+         select: { name: 1, _id: 0 },
+      },
+   ])
+   .sort(sortAndFiltering.sortedFields)
+   .then(function (result) {
+      let ResponseObject = {
+         Success: true,
+         Data: result,
+         // PageNo: request.length,
+         // ItemsNoPerPages: Number,
+         TotalPages: result.length
+      }
+      if(request.role == "admin" || result[0].doctor.id == request.id) {
+         if (result.length > 0) {
+            ResponseObject.Message = 'Your request is success';
+         } 
          else {
-            let error = new Error('Not allow for you to show the information of this prescription')
-            error.status = 403
-            next(error);
+            ResponseObject.Success = false;
+            ResponseObject.Message = 'This prescription is not found';
          }
-      })
-      .catch(function (error) {
-         next(error);
-      });
+      }
+      else {
+         ResponseObject.Success = false;
+         ResponseObject.Message = 'Not allow to show the details of this prescription';
+      }
+      response.status(200).json(ResponseObject);
+   })
+   .catch(function (error) {
+      next(error);
+   });
 };
 
 exports.getPresciptionsByClinicId = function (request, response, next) {
@@ -114,38 +140,42 @@ exports.getPresciptionsByClinicId = function (request, response, next) {
 		sortAndFiltering.selectedFields.patient = 0;
 	}
    PresciptionsSchema.find({ clinic: request.params.id }, sortAndFiltering.selectedFields)
-      .populate([
-         {
-            path: "doctor",
-            select: { firstName: 1, lastName: 1, specialty: 1, _id: 0 },
-         },
-         {
-            path: "patient",
-            select: { firstName: 1, lastName: 1, age: 1, _id: 0 },
-         },
-         {
-            path: "clinic",
-            select: { manager: 1, _id: 0 },
-         },
-         {
-            path: "medicine.medicineId",
-            select: { name: 1, _id: 0 },
-         },
-      ])
+   .populate([
+      {
+         path: "clinic",
+         select: { location: 1, _id: 0 },
+      },
+      {
+         path: "doctor",
+         populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
+         select: { firstName: 1, lastName: 1, specialty: 1, _id: 0 },
+      },
+      {
+         path: "patient",
+         select: { firstName: 1, lastName: 1, age: 1, _id: 0 },
+      },
+      {
+         path: "medicine.medicineId",
+         select: { name: 1, _id: 0 },
+      },
+   ])
       .sort(sortAndFiltering.sortedFields)
       .then(function (result) {
-         if(request.role == 'admin' || request.id == result.clinic.manager) {
-            if (result) {
-               response.status(200).json(result);
-            } else {
-               next(new Error("This presciption is not found"));
+            let ResponseObject = {
+               Success: true,
+               Data: result,
+               // PageNo: request.length,
+               // ItemsNoPerPages: Number,
+               TotalPages: result.length
             }
-         }
-         else {
-            let error = new Error('Not allow for you to show the information of this prescription')
-            error.status = 403
-            next(error);
-         }
+            if (result.length > 0) {
+               ResponseObject.Message = 'Your request is success';
+            } 
+            else {
+               ResponseObject.Success = false;
+               ResponseObject.Message = 'No prescriptions are found for this clinic';
+            }
+            response.status(200).json(ResponseObject);
       })
       .catch(function (error) {
          next(error);
@@ -164,31 +194,42 @@ exports.getPresciptionsByDoctorId = function (request, response, next) {
 		sortAndFiltering.selectedFields.patient = 0;
 	}
    PresciptionsSchema.find({ doctor: request.params.id }, sortAndFiltering.selectedFields)
-      .populate([
-         {
-            path: "clinic",
-            select: { location: 1, _id: 0 },
-         },
-         {
-            path: "patient",
-            select: { firstName: 1, lastName: 1, age: 1, _id: 0 },
-         },
-         {
-            path: "doctor",
-            select: {_id: 1 },
-         },
-         {
-            path: "medicine.medicineId",
-            select: { name: 1, _id: 0 },
-         },
-      ])
+   .populate([
+      {
+         path: "clinic",
+         select: { location: 1, _id: 0 },
+      },
+      {
+         path: "doctor",
+         populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
+         select: { firstName: 1, lastName: 1, specialty: 1, _id: 0 },
+      },
+      {
+         path: "patient",
+         select: { firstName: 1, lastName: 1, age: 1, _id: 0 },
+      },
+      {
+         path: "medicine.medicineId",
+         select: { name: 1, _id: 0 },
+      },
+   ])
       .sort(sortAndFiltering.sortedFields)
       .then(function (result) {
-         if (result) {
-            response.status(200).json(result);
-         } else {
-            next(new Error("This presciption is not found"));
+         let ResponseObject = {
+            Success: true,
+            Data: result,
+            // PageNo: request.length,
+            // ItemsNoPerPages: Number,
+            TotalPages: result.length
          }
+         if (result.length > 0) {
+            ResponseObject.Message = 'Your request is success';
+         } 
+         else {
+            ResponseObject.Success = false;
+            ResponseObject.Message = 'No prescriptions are found for this doctor';
+         }
+         response.status(200).json(ResponseObject);
       })
       .catch(function (error) {
          next(error);
@@ -197,44 +238,55 @@ exports.getPresciptionsByDoctorId = function (request, response, next) {
 
 exports.getPresciptionsByPatientId = function (request, response, next) {
    let sortAndFiltering = helper.sortAndFiltering(request);
-   if(request.query.select.split(',').indexOf("clinic") == -1) {
+   if(request.query.select && request.query.select.split(',').indexOf("clinic") == -1) {
 		sortAndFiltering.selectedFields.clinic = 0;
 	}
-   if(request.query.select.split(',').indexOf("doctor") == -1) {
+   if(request.query.select && request.query.select.split(',').indexOf("doctor") == -1) {
 		sortAndFiltering.selectedFields.doctor = 0;
 	}
-   if(request.query.select.split(',').indexOf("patient") == -1) {
+   if(request.query.select && request.query.select.split(',').indexOf("patient") == -1) {
 		sortAndFiltering.selectedFields.patient = 0;
 	}
-   if(request.query.select.split(',').indexOf("medicine") == -1) {
+   if(request.query.select && request.query.select.split(',').indexOf("medicine") == -1) {
 		sortAndFiltering.selectedFields.medicine = 0;
 	}
    PresciptionsSchema.find({ patient: request.params.id }, sortAndFiltering.selectedFields)
-      .populate([
-         {
-            path: "clinic",
-            select: { location: 1, _id: 0 },
-         },
-         {
-            path: "doctor",
-            select: { firstName: 1, lastName: 1, specialty: 1, _id: 0 },
-         },
-         {
-            path: "patient",
-            select: {_id: 1},
-         },
-         {
-            path: "medicine.medicineId",
-            select: { name: 1, _id: 0 },
-         },
-      ])
+   .populate([
+      {
+         path: "clinic",
+         select: { location: 1, _id: 0 },
+      },
+      {
+         path: "doctor",
+         populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
+         select: { firstName: 1, lastName: 1, specialty: 1, _id: 0 },
+      },
+      {
+         path: "patient",
+         select: { firstName: 1, lastName: 1, age: 1, _id: 0 },
+      },
+      {
+         path: "medicine.medicineId",
+         select: { name: 1, _id: 0 },
+      },
+   ])
       .sort(sortAndFiltering.sortedFields)
       .then(function (result) {
-         if (result) {
-            response.status(200).json(result);
-         } else {
-            next(new Error("This presciption is not found"));
+         let ResponseObject = {
+            Success: true,
+            Data: result,
+            // PageNo: request.length,
+            // ItemsNoPerPages: Number,
+            TotalPages: result.length
          }
+         if (result.length > 0) {
+            ResponseObject.Message = 'Your request is success';
+         } 
+         else {
+            ResponseObject.Success = false;
+            ResponseObject.Message = 'No prescriptions are found for this patient';
+         }
+         response.status(200).json(ResponseObject);
       })
       .catch(function (error) {
          next(error);
@@ -242,6 +294,12 @@ exports.getPresciptionsByPatientId = function (request, response, next) {
 };
 
 exports.addPresciption = function (request, response, next) {
+   let ResponseObject = {
+      Success: true,
+      Data: [],
+      Message: "The prescription is added successfully",
+      TotalPages: 1
+   }
    if (request.body.medicine != undefined) {
       let tempArray = [];
       request.body.medicine.forEach(function (medicine) {
@@ -253,61 +311,75 @@ exports.addPresciption = function (request, response, next) {
             if (result.length == uniqueMedicines.length) {
                ClinicSchema.findOne({ _id: request.body.clinic }).then(function (clinicData) {
                   if (clinicData != null) {
-                     let presciptionDate = new Date();
-                     console.log(request.body.patient)
                      PatientSchema.findOne({ _id: request.body.patient}).then(function (patientData) {
                         if (patientData != null) {
+                           let presciptionDate = new Date();
                            let newPresciption = new PresciptionsSchema({
                               clinic: request.body.clinic,
-                              doctor: request.id,
-                              patient: request.body.patient,
+                              doctor: request.body.doctor,
+                              patient: request.id,
                               medicine: request.body.medicine,
                               notes: request.body.notes,
                               date: presciptionDate.toLocaleDateString(),
                               time: presciptionDate.toLocaleTimeString(),
                            });
                            newPresciption.save()
-                              .then(function (result) {
-                                 request.populate([
-                                    {
-                                       path: "clinic",
-                                       select: { location: 1, _id: 0 },
-                                    },
-                                    {
-                                       path: "doctor",
-                                       select: { firstName: 1, lastName: 1, specialty: 1, _id: 0 },
-                                    },
-                                    {
-                                       path: "patient",
-                                       select: { firstName: 1, lastName: 1, age: 1, _id: 0 },
-                                    },
-                                    {
-                                       path: "medicine.medicineId",
-                                       select: { name: 1, _id: 0 },
-                                    },
-                                 ]).then(function() {
-                                    response.status(201).json(result);
-                                 })
+                           .then(function (result) {
+                              result.populate([
+                                 {
+                                    path: "clinic",
+                                    select: { location: 1, _id: 0 },
+                                 },
+                                 {
+                                    path: "doctor",
+                                    populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
+                                    select: { firstName: 1, lastName: 1, specialty: 1, _id: 0 },
+                                 },
+                                 {
+                                    path: "patient",
+                                    select: { firstName: 1, lastName: 1, age: 1, _id: 0 },
+                                 },
+                                 {
+                                    path: "medicine.medicineId",
+                                    select: { name: 1, _id: 0 },
+                                 },
+                              ]).then(function() {
+                                 console.log(result)
+                                 ResponseObject.Data = [result];
+                                 response.status(201).json(ResponseObject);
                               })
-                              .catch(function (error) {
-                                 next(error);
-                              });
-                        } else {
-                           next(new Error("You try to add patient not found"));
+                           })
+                           .catch(function (error) {
+                              next(error);
+                           });
+                        } 
+                        else {
+                           ResponseObject.Success = false;
+                           ResponseObject.Message = "You try to add patient not found";
+                           response.status(201).json(ResponseObject);
                         }
                      });
-                  } else {
-                     next(new Error("You try to add medicin not found"));
+                  } 
+                  else {
+                     ResponseObject.Success = false
+                     ResponseObject.Message = "You try to add medicin not found";
+                     response.status(404).json(ResponseObject);
                   }
                });
-            } else {
-               next(new Error("You try to add medicin not found"));
+            } 
+            else 
+            {
+               ResponseObject.Success = false;
+               ResponseObject.Message = "You try to add medicin not found";
+               response.status(404).json(ResponseObject);
             }
          });
-      } else {
+      } 
+      else {
          next(new Error("You can add any medicine only one time in each presciption"));
       }
-   } else {
+   } 
+   else {
       ClinicSchema.findOne({ _id: request.body.clinic }).then(function (clinicData) {
          if (clinicData != null) {
             PatientSchema.findOne({ _id: request.body.patient}).then(function (patientData) {
@@ -321,10 +393,29 @@ exports.addPresciption = function (request, response, next) {
                      date: presciptionDate.toLocaleDateString(),
                      time: presciptionDate.toLocaleTimeString(),
                   });
-                  newPresciption
-                     .save()
+                  newPresciption.save()
                      .then(function (result) {
-                        response.status(201).json(result);
+                        result.populate([
+                           {
+                              path: "clinic",
+                              select: { location: 1, _id: 0 },
+                           },
+                           {
+                              path: "doctor",
+                              select: { firstName: 1, lastName: 1, specialty: 1, _id: 0 },
+                           },
+                           {
+                              path: "patient",
+                              select: { firstName: 1, lastName: 1, age: 1, _id: 0 },
+                           },
+                           {
+                              path: "medicine.medicineId",
+                              select: { name: 1, _id: 0 },
+                           },
+                        ]).then(function() {
+                           ResponseObject.Data = [result];
+                           response.status(201).json(ResponseObject);
+                        })
                      })
                      .catch(function (error) {
                         next(error);
@@ -341,149 +432,162 @@ exports.addPresciption = function (request, response, next) {
 };
 
 exports.updatePresciption = function (request, response, next) {
+   let ResponseObject = {
+		Success: true,
+      Message: "The prescription is updated successfully",
+		TotalPages: 1
+	}
+
+   let changes = {};
    PresciptionsSchema.findOne({ _id: request.params.id })
-      .then(function (data) {
-         if(request.id == data.doctor) {
-            if (request.body.medicine != undefined) {
-               let oldMedicine = [];
-               data.medicine.forEach(function (medId) {
-                  oldMedicine.push(medId.medicineId);
-               });
-               let newMedicine = [];
-               request.body.medicine.forEach(function (med) {
-                  newMedicine.push(med.medicineId);
-               });
-               let unique = Array.from(new Set([...newMedicine]));
-               if (unique.length == newMedicine.length) {
-                  MedicineSchema.find({ _id: { $in: unique } })
-                     .then(function (medicineData) {
-                        if (medicineData.length == unique.length) {
-                           PatientSchema.findOne({ _id: request.body.patient }, { _id: 1 }).then(function (patientData) {
-                              if (patientData != null) {
-                                 ClinicSchema.findOne({ _id: request.body.clinic }, { _id: 1 })
-                                    .then(function (ClinicData) {
-                                       if (ClinicData != null) {
-                                          PresciptionsSchema.updateOne(
-                                             {
-                                                _id: request.params.id,
-                                             },
-                                             {
-                                                $set: {
-                                                   clinic: request.body.clinic,
-                                                   patient: request.body.patient,
-                                                   medicine: request.body.medicine,
-                                                },
-                                             }
-                                          )
-                                             .then(function (result) {
-                                                if (result.modifiedCount == 0) {
-                                                   response.status(200).json({ Updated: true, Message: "Nothing is changed" });
-                                                } else {
-                                                   response.status(200).json({ Updated: true, Message: "Prescription is updated successfully" });
-                                                }
-                                             })
-                                             .catch(function (error) {
-                                                next(error);
-                                             });
-                                       } else {
-                                          next(new Error("This patient is not found"));
-                                       }
-                                    })
-                                    .catch(function (error) {
-                                       next(error);
-                                    });
-                              } else {
-                                 next(new Error("This patient is not found"));
-                              }
-                           });
-                        } else {
-                           next(new Error("You cannot add medicine not found"));
-                        }
-                     })
-                     .catch(function (error) {
-                        next(error);
-                     });
-               } else {
-                  next(new Error("You cannot add the same medicine 2 times"));
-               }
-            } else {
-               PatientSchema.findOne({ _id: request.body.patient }, { _id: 1 }).then(function (patientData) {
-                  if (patientData != null) {
-                     ClinicSchema.findOne({ _id: request.body.clinic }, { _id: 1 })
-                        .then(function (ClinicData) {
-                           if (ClinicData != null) {
-                              PresciptionsSchema.updateOne(
-                                 {
-                                    _id: request.params.id,
-                                 },
-                                 {
-                                    $set: {
-                                       clinic: request.body.clinic,
-                                       patient: request.body.patient,
-                                    },
-                                 }
-                              )
-                                 .then(function (result) {
-                                    if (result.modifiedCount == 0) {
-                                       response.status(200).json({ Updated: true, Message: "Nothing is changed" });
-                                    } else {
-                                       response.status(200).json({ Updated: true, Message: "Prescription is updated successfully" });
-                                    }
-                                 })
-                                 .catch(function (error) {
-                                    next(error);
-                                 });
-                           } else {
-                              next(new Error("This patient is not found"));
-                           }
-                        })
-                        .catch(function (error) {
-                           next(error);
-                        });
-                  } else {
-                     next(new Error("This patient is not found"));
+   .then(function (data) {
+      if(request.role == "admin" || request.id == data.doctor) {
+         if (request.body.medicine != undefined) {
+            let oldMedicine = [];
+            data.medicine.forEach(function (medId) {
+               oldMedicine.push(medId.medicineId);
+            });
+            let newMedicine = [];
+            request.body.medicine.forEach(function (med) {
+               newMedicine.push(med.medicineId);
+            });
+            let unique = Array.from(new Set([...newMedicine]));
+            if (unique.length == newMedicine.length) {
+               MedicineSchema.find({ _id: { $in: unique } })
+               .then(function (medicineData) {
+                  if (medicineData.length == unique.length) {
+                     changes.medicine = request.body.medicine;
+                     checkPatient(request, response, next, ResponseObject, changes);
+                  } 
+                  else {
+                     ResponseObject.Success = false
+                     ResponseObject.Message = "You cannot add medicine not found";
+                     response.status(400).json(ResponseObject);
                   }
+               })
+               .catch(function (error) {
+                  next(error);
                });
+            } 
+            else {
+               ResponseObject.Success = false
+               ResponseObject.Message = "You cannot add the same medicine 2 times";
+               response.status(400).json(ResponseObject);
             }
-         }
+         } 
          else {
-            let error = new Error("Not allow for you to update the information of this prescription")
-            error.status = 403
-            next(error);
+            checkPatient(request, response, next, ResponseObject, changes)
          }
-      })
-      .catch(function () {
-         next(new Error("This presciption not found"));
-      });
+      }
+      else {
+         let error = new Error("Not allow for you to update the information of this prescription")
+         error.status = 403
+         next(error);
+      }
+   })
+   .catch(function () {
+      next(new Error("This presciption not found"));
+   });
 };
 
+//Deletion allow only for doctor and admin
 exports.deletePresciption = function (request, response, next) {
-   PresciptionsSchema.findOne({_id: request.params.id}, {doctor: 1, _id: 0}).then(function(data) {
-      if(data != null && (request.id == data.doctor)) {
-         PresciptionsSchema.deleteOne({
-            _id: request.params.id,
+   let ResponseObject = {
+		Success: true,
+	}
+   PresciptionsSchema.findById({_id: request.params.id}, {doctor: 1, _id: 0})
+   .then(function(res) {
+      if(res != null && (request.role == "admin" || res.doctor == request.id)) {         
+         PresciptionsSchema.deleteOne({_id: request.params.id})
+         .then(function (result) {
+            if (result.acknowledged && result.deletedCount == 1) {
+               ResponseObject.Message = "This Prescription is deleted successfully";
+            } 
+            else {
+               ResponseObject.Message = "This Prescription is not found";
+            }
+            response.status(200).json(ResponseObject);
          })
+         .catch(function (error) {
+            next(error);
+         });
+      }
+      else {
+         if(res == null) {
+            ResponseObject.Message = "This Prescription is not found";
+         }
+         else {
+            ResponseObject.Message = 'Not allow to show the details of this prescription';
+         }
+         response.status(200).json(ResponseObject);
+      }
+   })
+};
+
+function checkPatient(request, response, next, ResponseObject, changes) {
+   if(request.body.patient != undefined) {
+      PatientSchema.findOne({ _id: request.body.patient }, { _id: 1 }).then(function (patientData) {
+         if (patientData != null) {
+            changes.patient = request.body.patient
+            checkClinic(request, response, next, ResponseObject, changes);
+         } 
+         else {
+            ResponseObject.Success = false;
+            ResponseObject.Message = "This patient is not found";
+            response.status(404).json(ResponseObject);
+         }
+      });
+   }
+   else {
+      checkClinic(request, response, next, ResponseObject, changes);
+   }
+}
+
+function checkClinic(request, response, next, ResponseObject, changes) {
+   if(request.body.clinic != undefined) {
+      ClinicSchema.findOne({ _id: request.body.clinic }, { _id: 1 })
+      .then(function (ClinicData) {
+         if (ClinicData != null) {
+            changes.clinic = request.body.clinic
+            PresciptionsSchema.updateOne({_id: request.params.id},{$set: changes})
             .then(function (result) {
-               if (result.acknowledged && result.deletedCount == 1) {
-                  response.status(200).json({ Deleted: true, Message: "This Prescription is deleted successfully" });
-               } else {
-                  response.status(200).json({ Deleted: false, Message: "This Prescription is not found" });
+               if(result.modifiedCount == 0) {
+                  ResponseObject.Message = "Nothing is changed";
+                  response.status(201).json(ResponseObject);
+               }
+               else {
+                  ResponseObject.Message =  "Prescription is updated successfully";
+                  response.status(201).json(ResponseObject);
                }
             })
             .catch(function (error) {
                next(error);
             });
-      }
-      else {
-         if(data == null) {
-            let error = new Error("This Prescription is not found");
-            error.status = 404;
+         } 
+         else {
+            ResponseObject.Success = false;
+            ResponseObject.Message = "This clinic is not found";
+            response.status(404).json(ResponseObject);
+         }
+      })
+      .catch(function (error) {
+         next(error);
+      });
+   }
+   else {
+      PresciptionsSchema.updateOne({_id: request.params.id}, {$set: changes})
+      .then(function (result) {
+         if(result.modifiedCount == 0) {
+            ResponseObject.Message = "Nothing is changed";
+            response.status(201).json(ResponseObject);
          }
          else {
-            let error = new Error("Not allow for you to delete this prescription")
-            error.status = 401;
+            ResponseObject.Message =  "Prescription is updated successfully";
+            response.status(201).json(ResponseObject);
          }
-         next(error)
-      }
-   })
-};
+      })
+      .catch(function (error) {
+         next(error);
+      });
+   }
+}

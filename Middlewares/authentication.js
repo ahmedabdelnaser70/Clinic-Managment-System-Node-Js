@@ -49,7 +49,7 @@ module.exports.checkAdminOrDoctor = ((request, response, next) => {
 
 //Used
 module.exports.checkAdminOrDoctorForPrescription = ((request, response, next) => {
-    if(request.role == 'admin' || request.role == 'doctor') {
+    if(request.role == 'admin' || (request.role == 'doctor')) {
         next();
     } else {
         let error = new Error('Not allow for you to display or update the information of this prescription');
