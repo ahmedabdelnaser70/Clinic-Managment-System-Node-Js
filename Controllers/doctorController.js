@@ -104,6 +104,7 @@ exports.addDoctor = (request, response, next) => {
    ClinicSchema.find({_id: {$in: bodyClinic}}, {doctors: 1, _id: 0}).then((clinicData) => {
 		let ResponseObject = {
 			Success: true,
+         Date: [],
 			Message: "The Doctor is added succesfully",
 			TotalPages: 1
 		}
@@ -188,7 +189,9 @@ exports.addDoctor = (request, response, next) => {
                   });
             }
             else {
-               
+               ResponseObject.Success = false;
+               ResponseObject.Message = "This specailty is not found";
+               response.status(201).json(ResponseObject);
             }
          })
       }
