@@ -131,6 +131,8 @@ exports.addClinic = function(request, response, next) {
 						}).catch(function(error) {
 							next(error);
 						})
+					}).catch(function(error) {
+						next(error);
 					})
 				}).catch(function(error) {
 					next(error);
@@ -179,7 +181,7 @@ exports.addClinic = function(request, response, next) {
 				ResponseObject.Message = "The clinic is added successfully";
 				response.status(201).json(ResponseObject);
 			}).catch(function(error) {
-				next(error.Message);
+				next(error);
 			})
 		}
 	}
