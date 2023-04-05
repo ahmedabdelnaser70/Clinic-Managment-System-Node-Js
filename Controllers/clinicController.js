@@ -20,7 +20,7 @@ exports.getAllClinic = function(request, response, next) {
 		{
 			path: "doctors",
 			populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
-			select: {firstName:1, lastName: 1, specialty: 1, _id: 0}
+			select: {firstName:1, lastName: 1, specialty: 1}
 		},
 		{
 			path: "manager",
@@ -61,7 +61,7 @@ exports.getClinicById = function(request, response, next) {
 		{
 			path: "doctors",
 			populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
-			select: {firstName:1, lastName: 1, specialty: 1, _id: 0}
+			select: {firstName:1, lastName: 1, specialty: 1}
 		},
 		{
 			path: "manager",
@@ -117,7 +117,7 @@ exports.addClinic = function(request, response, next) {
 						{
 							path: "doctors",
 							populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
-							select: {firstName:1, lastName: 1, specialty: 1, _id: 0}
+							select: {firstName:1, lastName: 1, specialty: 1}
 						},
 						{
 							path: "manager",
@@ -157,8 +157,21 @@ exports.addClinic = function(request, response, next) {
 						availability: true
 					})
 					newClinic.save().then(function(result) {
-						ResponseObject.Data = [result];
-						ResponseObject.Message = "The clinic is added successfully";
+						result.populate([
+							{
+								path: "doctors",
+								populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
+								select: {firstName:1, lastName: 1, specialty: 1}
+							},
+							{
+								path: "manager",
+								select: {firstName:1, lastName: 1, specialty: 1 }
+							}
+						]).then(function() {
+							ResponseObject.Data = [result];
+							ResponseObject.Message = "The clinic is added successfully";
+							response.status(201).json(ResponseObject);
+						})
 					}).catch(function(error) {
 						next(error);
 					})
@@ -166,8 +179,8 @@ exports.addClinic = function(request, response, next) {
 				else {
 					ResponseObject.Success = false;
 					ResponseObject.Message = "The manager that you try to add doesn't found";
+					response.status(201).json(ResponseObject);
 				}
-				response.status(201).json(ResponseObject);
 			})
 		}
 		else {
@@ -177,11 +190,36 @@ exports.addClinic = function(request, response, next) {
 				availability: true
 			})
 			newClinic.save().then(function(result) {
+				result.populate([
+					{
+						path: "doctors",
+						populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
+						select: {firstName:1, lastName: 1, specialty: 1}
+					},
+					{
+						path: "manager",
+						select: {firstName:1, lastName: 1, specialty: 1 }
+					}
+				])
+			}).then(function() {
 				ResponseObject.Data = [result];
 				ResponseObject.Message = "The clinic is added successfully";
 				response.status(201).json(ResponseObject);
-			}).catch(function(error) {
-				next(error);
+			}).catch(function(err) {
+				if (err.name === 'MongoServerError') {
+					const errorJson = {
+						error: {
+							message: 'A MongoDB server error occurred',
+							code: err.code,
+							name: err.name,
+							errmsg: err.errmsg,
+						}
+					};
+					response.status(500).json(errorJson);
+				}
+				else {
+					next(err);
+				}
 			})
 		}
 	}

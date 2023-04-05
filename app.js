@@ -85,5 +85,5 @@ app.use((request, response, next) => {
 // Error MiddleWare
 app.use((error, response) => {
    const status = error.status || 500
-   response.status(status).json({message: "Error " + error});
+   response.status(500).json({message: "tarek"});
 });
