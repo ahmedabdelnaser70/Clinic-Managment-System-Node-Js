@@ -316,8 +316,8 @@ exports.addPresciption = function (request, response, next) {
                            let presciptionDate = new Date();
                            let newPresciption = new PresciptionsSchema({
                               clinic: request.body.clinic,
-                              doctor: request.body.doctor,
-                              patient: request.id,
+                              doctor: request.id,
+                              patient: request.body.patient,
                               medicine: request.body.medicine,
                               notes: request.body.notes,
                               date: presciptionDate.toLocaleDateString(),

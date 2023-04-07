@@ -112,8 +112,8 @@ exports.addClinic = function(request, response, next) {
 					availability: true
 				})
 				newClinic.save()
-				.then(function(result) {
-					result.populate([
+				.then(function(resultPopulation) {
+					resultPopulation.populate([
 						{
 							path: "doctors",
 							populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
@@ -123,10 +123,10 @@ exports.addClinic = function(request, response, next) {
 							path: "manager",
 							select: {firstName:1, lastName: 1, specialty: 1 }
 						}
-					]).then(function() {
+					]).then(function(result) {
+						ResponseObject.Data = [result];
+						ResponseObject.Message = "The clinic is added successfully";
 						DoctorSchema.updateMany({_id: {$in: unique}}, {$push: {clinic: result._id}}).then(function(res) {
-							ResponseObject.Data = [result];
-							ResponseObject.Message = "The clinic is added successfully";
 							response.status(201).json(ResponseObject);
 						}).catch(function(error) {
 							next(error);
@@ -134,8 +134,21 @@ exports.addClinic = function(request, response, next) {
 					}).catch(function(error) {
 						next(error);
 					})
-				}).catch(function(error) {
-					next(error);
+				}).catch(function(err) {
+					if (err.name === 'MongoServerError') {
+						const errorJson = {
+							error: {
+								message: 'A MongoDB server error occurred',
+								code: err.code,
+								name: err.name,
+								errmsg: err.errmsg,
+							}
+						};
+						response.status(500).json(errorJson);
+					}
+					else {
+						next(err);
+					}
 				})
 			}
 			else {
@@ -172,8 +185,21 @@ exports.addClinic = function(request, response, next) {
 							ResponseObject.Message = "The clinic is added successfully";
 							response.status(201).json(ResponseObject);
 						})
-					}).catch(function(error) {
-						next(error);
+					}).catch(function(err) {
+						if (err.name === 'MongoServerError') {
+							const errorJson = {
+								error: {
+									message: 'A MongoDB server error occurred',
+									code: err.code,
+									name: err.name,
+									errmsg: err.errmsg,
+								}
+							};
+							response.status(500).json(errorJson);
+						}
+						else {
+							next(err);
+						}
 					})
 				}
 				else {
@@ -190,18 +216,6 @@ exports.addClinic = function(request, response, next) {
 				availability: true
 			})
 			newClinic.save().then(function(result) {
-				result.populate([
-					{
-						path: "doctors",
-						populate: ({path: "specialty", model:"specialties", select: {specialty: 1, _id: 0}}),
-						select: {firstName:1, lastName: 1, specialty: 1}
-					},
-					{
-						path: "manager",
-						select: {firstName:1, lastName: 1, specialty: 1 }
-					}
-				])
-			}).then(function() {
 				ResponseObject.Data = [result];
 				ResponseObject.Message = "The clinic is added successfully";
 				response.status(201).json(ResponseObject);
@@ -262,7 +276,6 @@ function updateClinic(nameProperty, request, response, next) {
 	let clinicData = {};
 	let ResponseObject = {
 		Success: true,
-		Data: [],
 		TotalPages: 1
 	}
 	for(let prop of nameProperty) {
@@ -280,6 +293,7 @@ function updateClinic(nameProperty, request, response, next) {
 						ClinicSchema.updateOne({_id: request.params.id}, {$set: clinicData}).then(function(result) {
 							if(result.modifiedCount == 0) {
 								ResponseObject.Message = "Nothing is changed";
+								ResponseObject.Data = []
 								response.status(201).json(ResponseObject);
 							}
 							else {
@@ -289,6 +303,7 @@ function updateClinic(nameProperty, request, response, next) {
 									})
 									DoctorSchema.updateMany({_id: {$in: newDoctor}}, {$push: {clinic: +(request.params.id)}}).then(function() {
 										ResponseObject.Message = "This clinic is updated succesfully";
+										ResponseObject.Data = []
 										response.status(201).json(ResponseObject);
 									})
 									
@@ -299,6 +314,7 @@ function updateClinic(nameProperty, request, response, next) {
 									})
 									DoctorSchema.updateMany({_id: {$in: deletedDoctor}}, {$pull: {clinic: +(request.params.id)}}, {multi: true}).then(function() {
 										ResponseObject.Message = "This clinic is updated succesfully";
+										ResponseObject.Data = []
 										response.status(201).json(ResponseObject);
 									})
 								}
@@ -312,14 +328,27 @@ function updateClinic(nameProperty, request, response, next) {
 									DoctorSchema.updateMany({_id: {$in: newDoctor}}, {$push: {clinic: +(request.params.id)}}).then(function() {
 										DoctorSchema.updateMany({_id: {$in: deletedDoctor}}, {$pull: {clinic: +(request.params.id)}}, {multi: true}).then(function() {
 											ResponseObject.Message = "This clinic is updated succesfully";
+											ResponseObject.Data = []
 											response.status(201).json(ResponseObject);
 										})
 									})
 								}
 							}
 							
-						}).catch(function(error) {
-							next(error);
+						}).catch(function(err) {
+							console.log(err);
+							if (err.name === 'MongoServerError') {
+								const error = {
+									message: 'A MongoDB server error occurred',
+									code: err.code,
+									name: err.name,
+									errmsg: err.codeName + " " + JSON.stringify(err.keyValue),
+								}
+								response.status(500).json(error);
+							}
+							else {
+								next(err);
+							}
 						})
 					}
 					else {
@@ -343,8 +372,19 @@ function updateClinic(nameProperty, request, response, next) {
 									ResponseObject.Message =  "This clinic is updated successfully";
 									response.status(201).json(ResponseObject);
 								}
-							}).catch(function(error) {
-								next(error);
+							}).catch(function(err) {
+								if (err.name === 'MongoServerError') {
+									const error = {
+										message: 'A MongoDB server error occurred',
+										code: err.code,
+										name: err.name,
+										errmsg: err.errmsg,
+									}
+									response.status(500).json(error);
+								}
+								else {
+									next(err);
+								}
 							})
 						}
 						else {
@@ -353,7 +393,7 @@ function updateClinic(nameProperty, request, response, next) {
 					})
 				}
 				else {
-					ClinicSchema.updateOne({_id: request.params.id}, {$set: clinicData})
+					ClinicSchema.findOneAndUpdate({_id: request.params.id}, {$set: clinicData})
 					.then(function(result) {
 						if(result.modifiedCount == 0) {
 							ResponseObject.Message = "Nothing is changed";
@@ -363,8 +403,19 @@ function updateClinic(nameProperty, request, response, next) {
 							ResponseObject.Message = "This clinic is updated successfully";
 							response.status(201).json(ResponseObject);
 						}
-					}).catch(function(error) {
-						next(error);
+					}).catch(function(err) {
+						if (err.name === 'MongoServerError') {
+							const error = {
+								message: 'A MongoDB server error occurred',
+								code: err.code,
+								name: err.name,
+								errmsg: err.errmsg,
+							}
+							response.status(500).json(error);
+						}
+						else {
+							next(err);
+						}
 					})
 				}
 			}
