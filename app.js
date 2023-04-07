@@ -52,6 +52,7 @@ app.use(
 );
 
 app.use(cors());
+app.use("/uploads/images", express.static("uploads/images"));
 
 //register route
 app.use(publicRouter);
