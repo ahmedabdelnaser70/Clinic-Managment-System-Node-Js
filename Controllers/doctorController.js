@@ -164,6 +164,8 @@ exports.addDoctor = (request, response, next) => {
                                           availability: true
                                        })
                                        newUser.save().then(function() {
+                                          let message = `Hello doctor ${request.body.firstName} ${request.body.firstName}, Your password for login is ${request.body.password}`
+                                          helper.main(request.body.email, message);
                                           ResponseObject.Data = [result];
                                           ResponseObject.Message = "The doctor is added successfully";
                                           response.status(201).json(ResponseObject)

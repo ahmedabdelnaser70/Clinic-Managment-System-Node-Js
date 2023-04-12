@@ -1,9 +1,36 @@
 const mongoose = require("mongoose");
 const bcrypt = require('bcrypt');
+const helper = require("../helper/helperFunctions");
+const { request, response } = require("express");
 const saltRounds = 10;
 const salt = bcrypt.genSaltSync(saltRounds);
 require("../Models/usersModel");
 const UserSchema = mongoose.model("users");
+
+exports.getEmail = function(request, response, next) {
+	let sortAndFiltering = helper.sortAndFiltering(request);
+	sortAndFiltering.selectedFields.password = 0
+	UserSchema.find(sortAndFiltering.reqQuery, sortAndFiltering.selectedFields)
+	.then(function(result) {
+		let ResponseObject = {
+			Success: true,
+			Data: result,
+			// PageNo: request.length,
+			// ItemsNoPerPages: Number,
+			TotalPages: result.length
+		}
+		if (result.length > 0) {
+			ResponseObject.Message = 'Your request is success';
+		} 
+		else {
+			ResponseObject.Success = false;
+			ResponseObject.Message = 'This email is not found';
+		}
+		response.status(200).json(ResponseObject);
+	}).catch(function(error) {
+		next(error);
+	})
+}
 
 exports.updateEmail = (request, response, next) => {
 	const hash = bcrypt.hashSync(request.body.password, salt);

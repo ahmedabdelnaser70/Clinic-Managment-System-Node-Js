@@ -11,6 +11,10 @@ router.route("/users/email")
 
 router.route("/users/password")
 	.all(authenticatioMW.checkPatientOrDoctorOrEmployee)
-	.patch(...patchUserValidation, validator,controller.updatePassword)
+	.patch(...patchUserValidation, validator, controller.updatePassword)
+
+router.route("/users")
+	.all(authenticatioMW.checkAdmin)
+	.get(controller.getEmail)
 
 module.exports = router;

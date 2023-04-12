@@ -20,7 +20,7 @@ router.route("/doctors/:id?")
 router.route("/doctors/image/:id?")
    .patch(authenticatioMW.checkAdminOrDoctor, uploadDoctor, controller.changeDoctorImageById)
 
-router.route("/doctors/manager/:id?")
+router.route("/doctors/admin/:id?")
    .patch(authenticatioMW.checkAdmin, patchDoctorValidation, validator, controller.updateDoctorByManager)
 
 

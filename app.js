@@ -42,7 +42,7 @@ mongoose
 
 app.use(express.json());
 
-const fs = require('fs')
+const fs = require('fs');
 app.use(
 	morgan("tiny", {
 		stream: fs.createWriteStream("./access.log", {

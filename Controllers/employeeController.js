@@ -116,6 +116,8 @@ exports.addEmployee = (request, response, next) => {
                            path: "clinic",
                            select: {location: 1, _id: 0},
                         }).then(function() {
+                           let message = `Hello Mr. ${request.body.firstName} ${request.body.firstName}, Your password for login is ${request.body.password}`
+                           helper.main(request.body.email, message);
                            ResponseObject.Data = [result];
                            ResponseObject.Message = "The employee is added successfully";   
                            response.status(201).json(ResponseObject)

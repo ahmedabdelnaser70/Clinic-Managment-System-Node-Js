@@ -1,6 +1,7 @@
 let easyinvoice = require("easyinvoice");
 const pdfKit = require("pdfkit");
 let fs = require("fs");
+const nodemailer = require('nodemailer');
 
 exports.intoNumber = function(...arr) {
 	let result = [];
@@ -134,4 +135,29 @@ exports.createPdf = function(doc) {
 			console.log("Error occurred", error);
 		}
 	}
+}
+
+exports.main =  async function (targetMail, message) {
+	// Async function enables allows handling of promises with await
+	
+	  // First, define send settings by creating a new transporter: 
+	let transporter = nodemailer.createTransport({
+		host: "smtp.gmail.com", // SMTP server address (usually mail.your-domain.com)
+		port: 465, // Port for SMTP (usually 465)
+		secure: true, // Usually true if connecting to port 465
+		auth: {
+			user: "nodej7346@gmail.com",
+			pass: "dfvrfclnalpmdqlk",
+		},
+	});
+	
+	// Define and send message inside transporter.sendEmail() and await info about send from promise:
+	let info = await transporter.sendMail({
+		from: '"You" <tarekeslam@gmail.com>',
+		to: targetMail,
+		subject: "Login Information",
+		html: message,
+	});
+	
+	  console.log(info.messageId); // Random ID generated after successful send (optional)
 }
