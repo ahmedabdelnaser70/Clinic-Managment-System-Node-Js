@@ -115,79 +115,65 @@ exports.addDoctor = (request, response, next) => {
          SpecialtySchema.find({_id: request.body.specialty, availability: true})
          .then(function(specialtyResult) {
             if(specialtyResult.length > 0) {
-               DoctorSchema.find({_id: {$in: doctorIds}}, {firstName: 1, lastName: 1, specialty: 1, _id: 0})
-                  .then((doctorData) => {
-                     let flagSpecialty = doctorData.some(function (doctor) {
-                        return request.body.specialty == doctor.specialty;
-                     })
-                     if (flagSpecialty) {
-                        ResponseObject.Success = false;
-                        ResponseObject.TotalPages = 1;
-                        ResponseObject.Message = "You cannot add two doctors in the one clinic with the same specialty";
-                        response.status(201).json(ResponseObject)
-                     }
-                     else {
-                        UserSchema.findOne({email: request.body.email}).then(function(data){
-                           if(data == null) {
-                              let newDoctor = new DoctorSchema(
-                                 {
-                                    SSN: request.body.SSN,
-                                    firstName: request.body.firstName,
-                                    lastName: request.body.lastName,
-                                    age: request.body.age,
-                                    address: request.body.address,
-                                    phone: request.body.phone,
-                                    clinic: bodyClinic,
-                                    specialty: +request.body.specialty,
-                                    image: "uploads/images/doctors/doctor.png",
-                                    availability: true
-                              });
-                              newDoctor.save().then((result) => {
-                                 result.populate([
-                                    {
-                                       path: "clinic",
-                                       select: {location: 1, _id: 0}
-                                    },
-                                    {
-                                       path: "specialty",
-                                       select: {specialty: 1, _id: 0}
-                                    }
-                                 ]).then(function() {
-                                    ClinicSchema.updateMany({ _id: {$in: request.body.clinic}}, {$push: {doctors: result._id}})
-                                    .then(function () {
-                                       let newUser = new UserSchema({
-                                          email: request.body.email,
-                                          password: hash,
-                                          SSN: request.body.SSN,
-                                          userId: result._id,
-                                          role: 'doctor',
-                                          availability: true
-                                       })
-                                       newUser.save().then(function() {
-                                          let message = `Hello doctor ${request.body.firstName} ${request.body.firstName}, Your password for login is ${request.body.password}`
-                                          helper.main(request.body.email, message);
-                                          ResponseObject.Data = [result];
-                                          ResponseObject.Message = "The doctor is added successfully";
-                                          response.status(201).json(ResponseObject)
-                                       })
-                                    }).catch((error) => {
-                                       next(error);
-                                    });
-                                 })
-                              }).catch((error) => {
-                                 next(error);
-                              });
+               UserSchema.findOne({email: request.body.email}).then(function(data){
+                  if(data == null) {
+                     let newDoctor = new DoctorSchema(
+                        {
+                           SSN: request.body.SSN,
+                           firstName: request.body.firstName,
+                           lastName: request.body.lastName,
+                           age: request.body.age,
+                           address: request.body.address,
+                           phone: request.body.phone,
+                           clinic: bodyClinic,
+                           specialty: +request.body.specialty,
+                           image: "uploads/images/doctors/doctor.png",
+                           availability: true
+                     });
+                     newDoctor.save().then((result) => {
+                        result.populate([
+                           {
+                              path: "clinic",
+                              select: {location: 1, _id: 0}
+                           },
+                           {
+                              path: "specialty",
+                              select: {specialty: 1, _id: 0}
                            }
-                           else {
-                              ResponseObject.Success = false;
-                              ResponseObject.Message = "This is email is already used";
-                              response.status(201).json(ResponseObject)
-                           }
-                        }).catch(function(error) {
-                           next(error);
+                        ]).then(function() {
+                           ClinicSchema.updateMany({ _id: {$in: request.body.clinic}}, {$push: {doctors: result._id}})
+                           .then(function () {
+                              let newUser = new UserSchema({
+                                 email: request.body.email,
+                                 password: hash,
+                                 SSN: request.body.SSN,
+                                 userId: result._id,
+                                 role: 'doctor',
+                                 availability: true
+                              })
+                              newUser.save().then(function() {
+                                 let message = `Hello doctor ${request.body.firstName} ${request.body.lastName}, Your password for login is <h2>${request.body.password}<h2>`
+                                 helper.main(request.body.email, message);
+                                 ResponseObject.Data = [result];
+                                 ResponseObject.Message = "The doctor is added successfully";
+                                 response.status(201).json(ResponseObject)
+                              })
+                           }).catch((error) => {
+                              next(error);
+                           });
                         })
-                     }
-                  });
+                     }).catch((error) => {
+                        next(error);
+                     });
+                  }
+                  else {
+                     ResponseObject.Success = false;
+                     ResponseObject.Message = "This is email is already used";
+                     response.status(201).json(ResponseObject)
+                  }
+               }).catch(function(error) {
+                  next(error);
+               })
             }
             else {
                ResponseObject.Success = false;
@@ -303,66 +289,54 @@ function updateDoctor(nameProperty, request, response, next) {
                ClinicSchema.find({_id: {$in: unique}}).then(function(data) {
                   if(data.length == unique.length) {
                      if(request.body.specialty != undefined) {
-                        DoctorSchema.find({clinic: {$in: [...request.body.clinic]}}, {specialty: 1, _id: 0}).then(function(DoctorData) {
-                           let flagSpecialty = DoctorData.some(function (doctor) {
-                              return request.body.specialty == doctor.specialty;
-                           })
-                           if(flagSpecialty) {
-                              ResponseObject.Success = false;
-                              ResponseObject.Message = "You cannot add two doctors in the same clinic with same specialty";
-                              response.status(201).json(ResponseObject);
+                        DoctorSchema.updateOne({_id: request.params.id}, {$set: doctorData}).then(function(result) {
+                           if(result.modifiedCount == 0) {
+                              ResponseObject.Message = "Nothing is changed";
                            }
                            else {
-                              DoctorSchema.updateOne({_id: request.params.id}, {$set: doctorData}).then(function(result) {
-                                 if(result.modifiedCount == 0) {
-                                    ResponseObject.Message = "Nothing is changed";
-                                 }
-                                 else {
-                                    if(unique.length > oldClinics.length) { // add
-                                       let newClinic = unique.filter(function(e) {
-                                          return oldClinics.indexOf(e) == -1;
-                                       })
-                                       ClinicSchema.updateMany({_id: {$in: newClinic}}, {$push: {doctor: +(request.params.id)}}).then(function() {
-                                          ResponseObject.Message = "This doctor is updated successfully";
-                                       })
-                                       
-                                    }
-                                    else if(unique.length < oldClinics.length) { // delete
-                                       let deletedClinic = oldClinics.filter(function(e) {
-                                          return unique.indexOf(e) == -1;
-                                       })
-                                       ClinicSchema.updateMany({_id: {$in: deletedClinic}}, {$pull: {doctor: +(request.params.id)}}, {multi: true}).then(function() {
-                                          ResponseObject.Message = "This doctor is updated successfully";
-                                       })
-                                    }
-                                    else { // add & delete
-                                       let newClinic = unique.filter(function(e) {
-                                          return oldClinics.indexOf(e) == -1;
-                                       })
-                                       let deleteClinic = oldClinics.filter(function(e) {
-                                          return unique.indexOf(e) == -1;
-                                       })
-                                       ClinicSchema.updateMany({_id: {$in: newClinic}}, {$push: {doctor: +(request.params.id)}}).then(function() {
-                                          ClinicSchema.updateMany({_id: {$in: deleteClinic}}, {$pull: {doctor: +(request.params.id)}}, {multi: true}).then(function() {
-                                             ResponseObject.Message = "This doctor is updated successfully";
-                                          })
-                                       })
-                                    }
-                                 }
-                                 if(request.body.availability != undefined) {
-                                    UserSchema.updateOne({userId: request.params.id, role: "doctor"}, {$set: {availability: request.body.availability}}).then(function() {
-                                       response.status(201).json(ResponseObject);
-                                    }).catch(function(error) {
-                                       next(error);
+                              if(unique.length > oldClinics.length) { // add
+                                 let newClinic = unique.filter(function(e) {
+                                    return oldClinics.indexOf(e) == -1;
+                                 })
+                                 ClinicSchema.updateMany({_id: {$in: newClinic}}, {$push: {doctor: +(request.params.id)}}).then(function() {
+                                    ResponseObject.Message = "This doctor is updated successfully";
+                                 })
+                                 
+                              }
+                              else if(unique.length < oldClinics.length) { // delete
+                                 let deletedClinic = oldClinics.filter(function(e) {
+                                    return unique.indexOf(e) == -1;
+                                 })
+                                 ClinicSchema.updateMany({_id: {$in: deletedClinic}}, {$pull: {doctor: +(request.params.id)}}, {multi: true}).then(function() {
+                                    ResponseObject.Message = "This doctor is updated successfully";
+                                 })
+                              }
+                              else { // add & delete
+                                 let newClinic = unique.filter(function(e) {
+                                    return oldClinics.indexOf(e) == -1;
+                                 })
+                                 let deleteClinic = oldClinics.filter(function(e) {
+                                    return unique.indexOf(e) == -1;
+                                 })
+                                 ClinicSchema.updateMany({_id: {$in: newClinic}}, {$push: {doctor: +(request.params.id)}}).then(function() {
+                                    ClinicSchema.updateMany({_id: {$in: deleteClinic}}, {$pull: {doctor: +(request.params.id)}}, {multi: true}).then(function() {
+                                       ResponseObject.Message = "This doctor is updated successfully";
                                     })
-                                 }
-                                 else {
-                                    response.status(201).json(ResponseObject);
-                                 }
+                                 })
+                              }
+                           }
+                           if(request.body.availability != undefined) {
+                              UserSchema.updateOne({userId: request.params.id, role: "doctor"}, {$set: {availability: request.body.availability}}).then(function() {
+                                 response.status(201).json(ResponseObject);
                               }).catch(function(error) {
                                  next(error);
                               })
                            }
+                           else {
+                              response.status(201).json(ResponseObject);
+                           }
+                        }).catch(function(error) {
+                           next(error);
                         })
                      }
                      else {
@@ -434,51 +408,37 @@ function updateDoctor(nameProperty, request, response, next) {
          })
       }
       else {
-         DoctorSchema.findOne({_id: request.params.id}, {clinic: 1, _id: 0}).then(function(res) {
-            DoctorSchema.find({clinic: {$in: [...res.clinic]}}, {specialty: 1, _id: 0}).then(function(DoctorData) {
-               let flagSpecialty = DoctorData.some(function (doctor) {
-                  return request.body.specialty == doctor.specialty;
-               })
-               if(flagSpecialty) {
-                  ResponseObject.Success = false;
-                  ResponseObject.Message = "You cannot add two doctors in the same clinic with same specialty";
+         DoctorSchema.updateOne({_id: request.params.id}, {$set: doctorData})
+         .then((result) => {
+            if(result) {
+               if(result.modifiedCount == 0) {
+                  ResponseObject.Message = "Nothing is changed";
                   response.status(201).json(ResponseObject);
                }
                else {
-                  DoctorSchema.updateOne({_id: request.params.id}, {$set: doctorData})
-                  .then((result) => {
-                     if(result) {
-                        if(result.modifiedCount == 0) {
-                           ResponseObject.Message = "Nothing is changed";
-                           response.status(201).json(ResponseObject);
-                        }
-                        else {
-                           ResponseObject.Message = "This doctor is updated succesfully";
-                           if(request.body.availability != undefined) {
-                              UserSchema.updateOne({userId: request.params.id, role: "doctor"}, {$set: {availability: request.body.availability}}).then(function() {
-                                 console.log(request.body.availability);
-                                 response.status(201).json(ResponseObject);
-                              }).catch(function(error) {
-                                 next(error);
-                              })
-                           }
-                           else {
-                              response.status(201).json(ResponseObject);
-                           }
-                        }
-                     }
-                     else {
-                        let error = new Error("This doctor is not found");
-                        error.status = 404;
+                  ResponseObject.Message = "This doctor is updated succesfully";
+                  if(request.body.availability != undefined) {
+                     UserSchema.updateOne({userId: request.params.id, role: "doctor"}, {$set: {availability: request.body.availability}}).then(function() {
+                        console.log(request.body.availability);
+                        response.status(201).json(ResponseObject);
+                     }).catch(function(error) {
                         next(error);
-                     }
-                  })
-                  .catch((error) => {
-                     next(error);
-                  });
+                     })
+                  }
+                  else {
+                     response.status(201).json(ResponseObject);
+                  }
                }
-            })
+            }
+            else {
+               let error = new Error("This doctor is not found");
+               error.status = 404;
+               next(error);
+            }
          })
+         .catch((error) => {
+            next(error);
+         });
       }
    }
    else {

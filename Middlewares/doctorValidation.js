@@ -16,7 +16,7 @@ exports.addDoctorValidation = [
       .withMessage("last name characters must be less than or equal  50"),
    body("age").isInt().withMessage("doctor age must be number"),
    body("email")
-      .matches(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/)
+      .matches(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,4})+$/)
       .withMessage("enter valid email"),
    body("password").isString().isLength({ min: 5 }).withMessage("password minimun length must be more than or equal 5"),
    body("address").isObject().withMessage("address must be object"),
@@ -54,7 +54,7 @@ exports.patchDoctorValidation = [
    body("age").optional().isInt().withMessage("doctor age must be number"),
    body("email")
       .optional()
-      .matches(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/)
+      .matches(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,4})+$/)
       .withMessage("enter valid email"),
    body("password").optional().isString().isLength({ min: 5 }).withMessage("password minimun length must be more than or equal 5"),
    body("address").optional().isObject().withMessage("address must be object"),

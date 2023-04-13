@@ -16,7 +16,9 @@ let patientPost = [
       .withMessage("length of last Name >2"),
    body("age").isInt().withMessage("age should be integer"),
    body("address").optional().isObject().withMessage("address should be object"),
-   body("email").isEmail().withMessage("email should be valid"),
+   body("email")
+   .matches(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,4})+$/)
+   .withMessage("enter valid email"),
    body("password").isString().withMessage("password should be string"),
    body("phone").isString().withMessage("phone should be string"),
    body("image").optional().isString().withMessage("photo name must be string"),
@@ -45,7 +47,8 @@ let patientPatch = [
    body("address.city").optional().isString().withMessage("city should be a string"),
    body("address.street").optional().isString().withMessage("street should be a string"),
    body("address.building").optional().isInt().withMessage("building should be a integer"),
-   body("emali").optional().isEmail().withMessage("email should be valid"),
+   body("emali").optional().matches(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,4})+$/)
+   .withMessage("enter valid email"),
    body("password").optional().isString().withMessage("password should be string"),
    body("phone").optional().isString().withMessage("phone should be string"),
    body("image").optional().isString().withMessage("photo name must be string"),

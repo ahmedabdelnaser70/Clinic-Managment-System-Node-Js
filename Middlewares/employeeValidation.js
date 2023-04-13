@@ -17,7 +17,9 @@ exports.PostEmployeeValidation = [
    body("age").isInt().withMessage("age should be integer"),
    body("address").isObject().withMessage("address should be object"),
    body("password").isLength({ min: 8 }).withMessage("length must be >= 8"),
-   body("email").isEmail().withMessage("Invalid email"),
+   body("email")
+   .matches(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,4})+$/)
+   .withMessage("enter valid email"),
    body("phone").isString().withMessage("Invalid phone number"),
    body("job").isString().withMessage("Any employee must have a job"),
    body("salary").isNumeric().withMessage("Any employee must have a salary"),
@@ -46,7 +48,9 @@ exports.PatchEmployeeValidation = [
    body("age").optional().isInt().withMessage("age should be integer"),
    body("address").optional().isObject().withMessage("address should be object"),
    body("password").optional().isLength({ min: 8 }).withMessage("length must be >= 8"),
-   body("email").optional().isEmail().withMessage("Invalid email"),
+   body("email").optional()
+   .matches(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,4})+$/)
+   .withMessage("enter valid email"),
    body("phone").optional().isString().withMessage("Invalid phone number"),
    body("job").optional().isString().withMessage("Any employee must have a job"),
    body("salary").optional().isNumeric().withMessage("Any employee must have a salary"),
