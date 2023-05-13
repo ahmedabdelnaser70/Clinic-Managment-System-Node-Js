@@ -22,5 +22,5 @@ Run `npm start` for a dev server. Navigate to `http://localhost:8080/`. The appl
 
 ## Further help
 
-To get more help on the Node Js use `npm help` or go check out the [Node JS Overview and Command Reference]([https://angular.io/cli](https://nodejs.org/docs/latest-v18.x/api/)) page.
+To get more help on the Node Js use `npm help` or go check out the [Node JS Overview and Command Reference](https://nodejs.org/docs/latest-v18.x/api/) page.
 
